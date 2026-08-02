@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Acceso - Salvador Gym</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <img src="../../imagenes/logo1.jpeg" alt="Logo Salvador Gym" class="logo-img">
+        
+        <form id="form-login">
+            <div class="form-group">
+                <label>Usuario</label>
+                <input type="text" id="usuario" class="form-control" required placeholder="Ingresa tu usuario" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="password" class="form-control" required placeholder="Ingresa tu contraseña">
+            </div>
+            <button type="submit" class="login-btn">INGRESAR AL SISTEMA</button>
+        </form>
+        <div id="error-msg" class="error-msg"></div>
+    </div>
+
+    <script src="../js/login.js"></script>
+    <script>
+        function abrirGrupoWsp() {
+            require('electron').shell.openExternal('https://web.whatsapp.com/');
+        }
+    </script>
+</body>
+</html>

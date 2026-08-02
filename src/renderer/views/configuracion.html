@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuración - Salvador Gym</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <h1 class="logo-text">SALVADOR <span class="neon-text">GYM</span></h1>
+            <button class="nav-btn" onclick="location.href='index.html'">🛒 Caja Rápida</button>
+            <button class="nav-btn" onclick="location.href='socios.html'">👥 Socios</button>
+            <button class="nav-btn" onclick="location.href='membresias.html'">🎟️ Membresías</button>
+            <button class="nav-btn" onclick="location.href='inventario.html'">📦 Inventario</button>
+            <button class="nav-btn" onclick="location.href='finanzas.html'">💰 Finanzas Hoy</button>
+            <button class="nav-btn" onclick="location.href='caja_global.html'">📊 Caja Global</button>
+            <button class="nav-btn active" onclick="location.href='configuracion.html'">⚙️ Configuración</button>
+            
+            <button class="floating-wsp-btn" onclick="abrirGrupoWsp()">💬 Grupo WhatsApp</button>
+        </div>
+
+        <div class="main-panel">
+            <h2>⚙️ Configuración y Marketing (WSP)</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+                
+                <div style="background: rgba(26, 26, 26, 0.95); padding: 20px; border-radius: 8px; height: fit-content; backdrop-filter: blur(5px);">
+                    <h3 style="color: #ff4444; margin-top: 0;">🔐 Accesos del Sistema</h3>
+                    <form id="form-credenciales">
+                        <div class="form-group">
+                            <label>Usuario Administrador</label>
+                            <input type="text" id="config-user" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nueva Contraseña</label>
+                            <input type="text" id="config-pass" class="form-control" required>
+                        </div>
+                        <button type="submit" class="pay-btn cash-btn">Actualizar Accesos</button>
+                    </form>
+                </div>
+
+                <div style="background: rgba(26, 26, 26, 0.95); padding: 20px; border-radius: 8px; backdrop-filter: blur(5px);">
+                    <h3 style="color: #25D366; margin-top: 0;">📲 Editor de Rutinas (WhatsApp)</h3>
+                    <p style="color: #888; font-size: 13px;">Usa <b>[NOMBRE]</b> en el texto para que el sistema lo cambie automáticamente por el nombre de tu socio al enviarlo.</p>
+                    
+                    <div class="form-group">
+                        <label>Selecciona la rutina maestra a editar:</label>
+                        <select id="select-rutina" class="form-control" style="border-color: #25D366;">
+                            <option value="Hombre_Volumen">Hombre - Volumen (+500 kcal)</option>
+                            <option value="Hombre_Definicion">Hombre - Definición (-500 kcal)</option>
+                            <option value="Hombre_Mantenimiento">Hombre - Mantenimiento (0 kcal)</option>
+                            <option value="Mujer_Volumen">Mujer - Volumen (+500 kcal)</option>
+                            <option value="Mujer_Definicion">Mujer - Definición (-500 kcal)</option>
+                            <option value="Mujer_Mantenimiento">Mujer - Mantenimiento (0 kcal)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Contenido de la rutina:</label>
+                        <textarea id="texto-rutina" class="form-control" style="height: 250px; font-family: monospace; resize: none;"></textarea>
+                    </div>
+
+                    <button id="btn-guardar-rutina" class="pay-btn" style="background-color: #25D366;">💾 Guardar Plantilla de Rutina</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <script src="../js/configuracion.js"></script>
+    <script>
+        function abrirGrupoWsp() {
+            require('electron').shell.openExternal('https://web.whatsapp.com/');
+        }
+    </script>
+</body>
+</html>

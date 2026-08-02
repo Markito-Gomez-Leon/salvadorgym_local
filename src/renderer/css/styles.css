@@ -1,0 +1,129 @@
+/* Archivo: src/renderer/css/styles.css */
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+/* INYECCIÓN DE IMAGEN DE FONDO CON FILTRO OSCURO (MARCA DE AGUA) */
+body { 
+    background-color: #121212; 
+    background-image: linear-gradient(rgba(18, 18, 18, 0.90), rgba(18, 18, 18, 0.90)), url('../../imagenes/logo2.jpeg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    color: #E0E0E0; 
+    height: 100vh; 
+    overflow: hidden; 
+}
+
+.app-container { display: flex; height: 100%; }
+
+/* Sidebar (Menú Lateral con ligera transparencia) */
+.sidebar { width: 250px; background-color: rgba(30, 30, 30, 0.85); padding: 20px; border-right: 1px solid #333; backdrop-filter: blur(5px); }
+.logo-text { font-size: 24px; margin-bottom: 40px; text-align: center; color: #F5F5F5; }
+.neon-text { color: #00E5FF; text-shadow: 0 0 10px #00E5FF; }
+.nav-btn { width: 100%; padding: 15px; background: transparent; border: none; color: #E0E0E0; text-align: left; font-size: 16px; cursor: pointer; margin-bottom: 10px; border-radius: 8px; }
+.nav-btn.active, .nav-btn:hover { background-color: rgba(0, 229, 255, 0.1); color: #00E5FF; border-left: 4px solid #00E5FF; }
+
+/* Paneles Centrales y Grillas */
+.main-panel { flex: 1; padding: 30px; overflow-y: auto; }
+h2 { margin-bottom: 20px; color: #F5F5F5; }
+.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; margin-top: 20px; }
+.product-btn { background-color: #2A2A2A; color: white; border: 1px solid #444; padding: 30px 10px; border-radius: 12px; font-size: 16px; cursor: pointer; transition: 0.2s; }
+.product-btn:hover { border-color: #00E5FF; box-shadow: 0 0 15px rgba(0, 229, 255, 0.3); }
+
+/* Caja Rápida / Ticket */
+.ticket-panel { width: 320px; background-color: rgba(26, 26, 26, 0.95); padding: 20px; display: flex; flex-direction: column; border-left: 1px solid #333; backdrop-filter: blur(5px); }
+.ticket-items { flex: 1; margin-top: 20px; border-bottom: 1px solid #444; overflow-y: auto; }
+.total-section { padding: 20px 0; text-align: right; font-size: 20px; color: #00E5FF; }
+.pay-btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
+.pay-btn:hover { filter: brightness(1.2); }
+.yape-btn { background-color: #742484; color: #FFFFFF; box-shadow: 0 0 10px rgba(116, 36, 132, 0.3); }
+.cash-btn { background-color: #25D366; color: #000000; box-shadow: 0 0 10px rgba(37, 211, 102, 0.3); }
+
+/* Tablas Globales */
+.header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.data-table { width: 100%; border-collapse: collapse; background-color: #1A1A1A; border-radius: 12px; overflow: hidden; }
+.data-table th, .data-table td { padding: 15px; text-align: left; border-bottom: 1px solid #333; color: #E0E0E0; }
+.data-table th { background-color: #2A2A2A; color: #00E5FF; font-weight: normal; }
+
+/* Botones de Acción Interna */
+.action-btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-right: 5px; transition: 0.2s; }
+.btn-edit { background-color: transparent; border: 1px solid #00E5FF; color: #00E5FF; }
+.btn-edit:hover { background-color: #00E5FF; color: #000; }
+.btn-delete { background-color: transparent; border: 1px solid #ff4444; color: #ff4444; }
+.btn-delete:hover { background-color: #ff4444; color: #fff; }
+.btn-wsp { background-color: #25D366; color: #000; border: none; }
+.btn-wsp:hover { box-shadow: 0 0 10px #25D366; }
+
+/* Modales / Ventanas Emergentes */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); justify-content: center; align-items: center; z-index: 1000; }
+.modal-content { background-color: #1A1A1A; padding: 30px; border-radius: 12px; border: 1px solid #333; width: 400px; box-shadow: 0 0 20px rgba(0, 229, 255, 0.1); }
+.modal-content h3 { color: #00E5FF; margin-bottom: 20px; }
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; margin-bottom: 5px; color: #E0E0E0; font-size: 14px; }
+.form-control { width: 100%; padding: 10px; background-color: #2A2A2A; border: 1px solid #444; color: white; border-radius: 6px; font-size: 14px; }
+.form-control:focus { border-color: #00E5FF; outline: none; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
+.btn-cancel { background: transparent; border: 1px solid #777; color: #E0E0E0; padding: 10px 15px; border-radius: 6px; cursor: pointer; }
+.btn-cancel:hover { background: #333; }
+
+/* Modal del Mega Perfil */
+.mega-modal { width: 90% !important; max-width: 1200px !important; max-height: 90vh; overflow-y: auto; }
+.mega-modal-layout { display: flex; gap: 20px; margin-top: 15px; }
+.mega-modal-sidebar { width: 30%; background-color: #161616; border-right: 1px solid #333; padding: 15px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; }
+.mega-modal-content { width: 70%; }
+.historial-item { background: #2A2A2A; padding: 10px; border-radius: 6px; border-left: 3px solid #00E5FF; font-size: 13px; color: #E0E0E0; }
+
+/* Pestañas (Tabs) */
+.tabs-header { display: flex; border-bottom: 2px solid #333; margin-bottom: 20px; }
+.tab-btn { flex: 1; background: transparent; color: #888; border: none; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+.tab-btn:hover { color: #E0E0E0; }
+.tab-btn.active { color: #00E5FF; border-bottom: 3px solid #00E5FF; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* UI Específica: Resultados y Alertas */
+.medidas-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+.resultados-box { background-color: #2A2A2A; padding: 15px; border-radius: 8px; border-left: 4px solid #00E5FF; margin-top: 20px; font-family: monospace; font-size: 14px; white-space: pre-wrap; line-height: 1.5; }
+.btn-remove-item { background: transparent; border: none; color: #ff4444; cursor: pointer; font-size: 16px; margin-left: 10px; font-weight: bold; transition: 0.2s; }
+.btn-remove-item:hover { color: #ff0000; transform: scale(1.2); }
+
+/* Colores Neón y Alertas Especiales */
+.fiado-neon { color: #FF0055 !important; text-shadow: 0 0 8px rgba(255,0,85,0.6); font-weight: bold; }
+.row-fiado { background-color: rgba(255, 0, 85, 0.08) !important; border-left: 4px solid #FF0055; }
+.badge-mensualidad { background-color: rgba(0, 229, 255, 0.15); color: #00E5FF; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-left: 8px; }
+.stock-critical { color: #ff4444 !important; font-weight: bold; }
+.sidebar-badge { background-color: #ff4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-left: 10px; vertical-align: middle; }
+
+/* Botón Flotante WSP y Banner Cumpleaños */
+.floating-wsp-btn { position: absolute; bottom: 20px; left: 20px; width: 210px; background-color: #25D366; color: #000; border: none; border-radius: 8px; padding: 12px 15px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; z-index: 1000; }
+.floating-wsp-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(37, 211, 102, 0.5); }
+.top-notification { background: linear-gradient(90deg, #FF9800, #ff5722); color: white; text-align: center; padding: 10px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4); animation: slideDown 0.5s ease-out; z-index: 2000; position: relative; }
+@keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+/* Tarjetas Globales */
+.mini-card-grid { display: flex; gap: 15px; margin-bottom: 20px; }
+.mini-card { flex: 1; background-color: #1A1A1A; padding: 15px; border-radius: 10px; border-left: 4px solid #00E5FF; display: flex; justify-content: space-between; align-items: center; }
+.mini-card h4 { color: #888; font-size: 14px; margin-bottom: 5px; }
+.mini-card .amount { font-size: 20px; color: #fff; font-weight: bold; }
+
+/* =========================================
+   PANTALLA DE LOGIN (CON ADAPTACIÓN DE IMAGEN)
+   ========================================= */
+.login-body { display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+.login-container { background-color: rgba(26, 26, 26, 0.95); padding: 40px 30px; border-radius: 12px; border: 1px solid #333; width: 400px; box-shadow: 0 0 25px rgba(0, 229, 255, 0.15); text-align: center; backdrop-filter: blur(10px); }
+
+/* CONTENEDOR INTELIGENTE PARA EL LOGO */
+.login-container .logo-img { 
+    max-width: 100%; 
+    max-height: 140px; /* Evita que crezca demasiado hacia abajo */
+    object-fit: contain; /* Encaja sin deformarse ni estirarse */
+    margin-bottom: 30px; 
+    display: block; 
+    margin-left: auto; 
+    margin-right: auto; 
+}
+
+.login-container form { display: flex; flex-direction: column; text-align: left; }
+.login-btn { margin-top: 15px; width: 100%; padding: 15px; background-color: #00E5FF; color: #000; font-weight: bold; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; transition: 0.3s; box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
+.login-btn:hover { background-color: #fff; box-shadow: 0 0 15px rgba(0, 229, 255, 0.6); }
+.error-msg { color: #ff4444; margin-top: 15px; font-size: 14px; text-align: center; font-weight: bold; min-height: 20px; }

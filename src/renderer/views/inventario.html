@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Salvador Gym - Inventario</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <h1 class="logo-text">SALVADOR <span class="neon-text">GYM</span></h1>
+            <nav>
+                <button class="nav-btn" onclick="location.href='index.html'">🛒 Caja Rápida</button>
+                <button class="nav-btn" onclick="location.href='socios.html'">👥 Socios</button>
+                <button class="nav-btn" onclick="location.href='membresias.html'">🎟️ Membresías</button>
+                <button class="nav-btn active" onclick="location.href='inventario.html'">📦 Inventario</button>
+                <button class="nav-btn" onclick="location.href='finanzas.html'">💰 Finanzas Hoy</button>
+                <button class="nav-btn" onclick="location.href='caja_global.html'">📊 Caja Global</button>
+                <button class="nav-btn" onclick="location.href='configuracion.html'">⚙️ Configuración</button>
+            </nav>
+            <button class="floating-wsp-btn" onclick="abrirGrupoWsp()">💬 Grupo WhatsApp</button>
+        </aside>
+
+        <main class="main-panel">
+            <div class="header-actions">
+                <h2>Control de Inventario</h2>
+                <button id="btn-nuevo-producto" class="pay-btn yape-btn" style="width: auto; padding: 10px 20px;">+ Nuevo Producto</button>
+            </div>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Precio (S/)</th>
+                        <th>Stock Actual</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-inventario">
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <div id="modal-producto" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-titulo">Registrar Nuevo Producto</h3>
+            <form id="form-producto">
+                <input type="hidden" id="input-id">
+                
+                <div class="form-group">
+                    <label>Nombre del Producto</label>
+                    <input type="text" id="input-nombre" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Precio de Venta (S/)</label>
+                    <input type="number" step="0.10" id="input-precio" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Stock Inicial</label>
+                    <input type="number" id="input-stock" class="form-control" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="btn-cerrar-modal" class="btn-cancel">Cancelar</button>
+                    <button type="submit" class="pay-btn yape-btn" style="margin: 0; width: auto; padding: 10px 20px;">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/inventario.js"></script>
+    <script>
+        function abrirGrupoWsp() {
+            require('electron').shell.openExternal('https://web.whatsapp.com/');
+        }
+    </script>
+</body>
+</html>

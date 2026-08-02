@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Caja Global - Salvador Gym</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <h1 class="logo-text">SALVADOR <span class="neon-text">GYM</span></h1>
+            <button class="nav-btn" onclick="location.href='index.html'">🛒 Caja Rápida</button>
+            <button class="nav-btn" onclick="location.href='socios.html'">👥 Socios</button>
+            <button class="nav-btn" onclick="location.href='membresias.html'">🎟️ Membresías</button>
+            <button class="nav-btn" onclick="location.href='inventario.html'">📦 Inventario</button>
+            <button class="nav-btn" onclick="location.href='finanzas.html'">💰 Finanzas Hoy</button>
+            <button class="nav-btn active" onclick="location.href='caja_global.html'">📊 Caja Global</button>
+            <button class="nav-btn" onclick="location.href='configuracion.html'">⚙️ Configuración</button>
+            <button class="floating-wsp-btn" onclick="abrirGrupoWsp()">💬 Grupo WhatsApp</button>
+        </div>
+
+        <div class="main-panel">
+            <div class="header-actions">
+                <h2>Caja Global y Egresos</h2>
+                <div>
+                    <button id="btn-nuevo-gasto" class="action-btn" style="background-color: #ff4444; color: white; padding: 12px 20px;">- Registrar Gasto</button>
+                    <button class="action-btn btn-wsp" onclick="exportarExcelGlobal()" style="padding: 12px 20px;">📊 Exportar Reporte Completo</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px; background: #1A1A1A; padding: 15px; border-radius: 8px; border: 1px solid #333; display: flex; gap: 15px; align-items: center;">
+                <label style="color: #00E5FF; font-weight: bold;">Desde:</label>
+                <input type="date" id="filtro-desde" class="form-control" style="width: auto;">
+                <label style="color: #00E5FF; font-weight: bold;">Hasta:</label>
+                <input type="date" id="filtro-hasta" class="form-control" style="width: auto;">
+                <button class="action-btn" onclick="filtrarCajaGlobal()" style="background-color: #00E5FF; color: black; padding: 10px 20px;">🔍 Filtrar Rango</button>
+            </div>
+
+            <div class="mini-card-grid">
+                <div class="mini-card">
+                    <h4>Ingresos Brutos (Dinero Real Cobrado)</h4>
+                    <div class="amount" id="total-ingresos" style="color: #25D366;">S/ 0.00</div>
+                </div>
+                <div class="mini-card">
+                    <h4>Gastos Totales (Egresos)</h4>
+                    <div class="amount" id="total-egresos" style="color: #ff4444;">S/ 0.00</div>
+                </div>
+                <div class="mini-card" style="border-left: 4px solid #00E5FF; background-color: rgba(0, 229, 255, 0.05);">
+                    <h4>Ganancia Neta Final</h4>
+                    <div class="amount" id="total-neto">S/ 0.00</div>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Fecha y Hora</th>
+                        <th>Concepto / Producto</th>
+                        <th>Tipo</th>
+                        <th>Monto</th>
+                        <th>Método / Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-caja-global">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modal-gasto" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color: #ff4444;">Registrar Egreso (Gasto)</h3>
+            <form id="form-gasto">
+                <div class="form-group">
+                    <label>Descripción del Gasto</label>
+                    <input type="text" id="gasto-desc" class="form-control" required placeholder="Ej. Pago de luz, Mantenimiento...">
+                </div>
+                <div class="form-group">
+                    <label>Monto a descontar (S/)</label>
+                    <input type="number" id="gasto-monto" step="0.1" class="form-control" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="document.getElementById('modal-gasto').style.display='none'">Cancelar</button>
+                    <button type="submit" class="action-btn" style="background-color: #ff4444; color: white; padding: 10px 20px;">Guardar Gasto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/caja_global.js"></script>
+    <script>
+        function abrirGrupoWsp() {
+            require('electron').shell.openExternal('https://web.whatsapp.com/');
+        }
+    </script>
+</body>
+</html>

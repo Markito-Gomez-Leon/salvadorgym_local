@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Membresías - Salvador Gym</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <h1 class="logo-text">SALVADOR <span class="neon-text">GYM</span></h1>
+            <button class="nav-btn" onclick="location.href='index.html'">🛒 Caja Rápida</button>
+            <button class="nav-btn" onclick="location.href='socios.html'">👥 Socios</button>
+            <button class="nav-btn active" onclick="location.href='membresias.html'">🎟️ Membresías</button>
+            <button class="nav-btn" onclick="location.href='inventario.html'">📦 Inventario</button>
+            <button class="nav-btn" onclick="location.href='finanzas.html'">💰 Finanzas Hoy</button>
+            <button class="nav-btn" onclick="location.href='caja_global.html'">📊 Caja Global</button>
+            <button class="nav-btn" onclick="location.href='configuracion.html'">⚙️ Configuración</button>
+            <button class="floating-wsp-btn" onclick="abrirGrupoWsp()">💬 Grupo WhatsApp</button>
+        </div>
+
+        <div class="main-panel">
+            <div class="header-actions">
+                <h2>Control de Membresías y Planes</h2>
+                <button id="btn-nueva-membresia" class="action-btn" style="background-color: #00E5FF; color: black; padding: 12px 20px;">+ Nueva Membresía</button>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre del Plan</th>
+                        <th>Precio (S/)</th>
+                        <th>Duración (Meses)</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-membresias">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modal-membresia" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-titulo-membresia">Nueva Membresía</h3>
+            <form id="form-membresia">
+                <input type="hidden" id="membresia-id">
+                
+                <div class="form-group">
+                    <label>Nombre del Plan</label>
+                    <input type="text" id="nombre-plan" class="form-control" required placeholder="Ej. Plan Anual VIP">
+                </div>
+                <div class="form-group">
+                    <label>Precio (S/)</label>
+                    <input type="number" id="precio-plan" step="0.01" class="form-control" required placeholder="Ej. 100.00">
+                </div>
+                <div class="form-group">
+                    <label>Duración (Meses)</label>
+                    <input type="number" id="duracion-plan" class="form-control" required placeholder="Ej. 1, 3, 12">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="btn-cerrar-membresia" class="btn-cancel">Cancelar</button>
+                    <button type="submit" class="action-btn" style="background-color: #00E5FF; color: black; padding: 10px 20px;">Guardar Plan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/membresias.js"></script>
+    <script>
+        function abrirGrupoWsp() {
+            require('electron').shell.openExternal('https://web.whatsapp.com/');
+        }
+    </script>
+</body>
+</html>

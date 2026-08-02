@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Socios - Salvador Gym</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div id="banner-cumpleanos" class="top-notification" style="display: none;">
+        🎉 ¡Hoy es el cumpleaños de <span id="nombre-cumpleanero"></span>! No olvides felicitarle hoy.
+    </div>
+
+    <div class="app-container">
+        <div class="sidebar">
+            <h1 class="logo-text">SALVADOR <span class="neon-text">GYM</span></h1>
+            <button class="nav-btn" onclick="location.href='index.html'">🛒 Caja Rápida</button>
+            <button class="nav-btn active" onclick="location.href='socios.html'">👥 Socios</button>
+            <button class="nav-btn" onclick="location.href='membresias.html'">🎟️ Membresías</button>
+            <button class="nav-btn" onclick="location.href='inventario.html'">📦 Inventario</button>
+            <button class="nav-btn" onclick="location.href='finanzas.html'">💰 Finanzas Hoy</button>
+            <button class="nav-btn" onclick="location.href='caja_global.html'">📊 Caja Global</button>
+            <button class="nav-btn" onclick="location.href='configuracion.html'">⚙️ Configuración</button>
+            <button class="floating-wsp-btn" onclick="abrirGrupoWsp()">💬 Grupo WhatsApp</button>
+        </div>
+
+        <div class="main-panel">
+            <div class="header-actions">
+                <h2>Directorio de Socios</h2>
+                <button id="btn-nuevo-socio" class="action-btn" style="background-color: #00E5FF; color: black; padding: 12px 20px;">+ Nuevo Socio</button>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Teléfono</th>
+                        <th>Plan</th>
+                        <th>Vencimiento</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-socios">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modal-socio" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-titulo">Registrar Nuevo Socio</h3>
+            <form id="form-socio">
+                <input type="hidden" id="socio-id">
+                <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="socio-nombre" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono (WhatsApp)</label>
+                    <input type="text" id="socio-telefono" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Nacimiento</label>
+                    <input type="date" id="socio-nacimiento" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Plan de Membresía</label>
+                    <select id="socio-plan" class="form-control" required>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Método de Pago (1ra Mensualidad)</label>
+                    <select id="socio-metodo" class="form-control" required>
+                        <option value="Efectivo">💵 Efectivo</option>
+                        <option value="Yape">📱 Yape</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Vencimiento (Autocalculado)</label>
+                    <input type="date" id="socio-vencimiento" class="form-control" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="btn-cerrar-modal" class="btn-cancel">Cancelar</button>
+                    <button type="submit" class="action-btn" style="background-color: #00E5FF; color: black; padding: 10px 15px;">Guardar Socio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-perfil" class="modal-overlay">
+        <div class="modal-content mega-modal">
+            <h3 style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px;">
+                <span>📋 Perfil Clínico: <span id="perfil-nombre" style="color: white;"></span></span>
+                <div>
+                    <button id="btn-renovar-perfil" class="action-btn" style="background-color: #25D366; color: black; padding: 8px 15px; font-size: 14px;">⚡ Renovar Plan</button>
+                    <button id="btn-cerrar-perfil" class="btn-cancel" style="padding: 8px 12px; font-size: 14px;">Cerrar ❌</button>
+                </div>
+            </h3>
+
+            <div class="mega-modal-layout">
+                <div class="mega-modal-sidebar">
+                    <h4 style="color: #00E5FF; margin-bottom: 10px;">📈 Historial de Progreso</h4>
+                    <div id="historial-progreso-lista">
+                    </div>
+                </div>
+
+                <div class="mega-modal-content">
+                    <div class="tabs-header">
+                        <button class="tab-btn active" onclick="cambiarPestana('tab-calculadora', this)">💪 Calculadora Fitness</button>
+                        <button class="tab-btn" onclick="cambiarPestana('tab-marketing', this)">📱 WhatsApp CRM</button>
+                        <button class="tab-btn" onclick="cambiarPestana('tab-deudas', this)">💰 Fiados</button>
+                    </div>
+
+                    <div id="tab-calculadora" class="tab-content active">
+                        <form id="form-calculadora">
+                            <input type="hidden" id="perfil-id">
+                            <div class="medidas-grid">
+                                <div class="form-group"><label>Género</label><select id="calc-genero" class="form-control"><option value="Hombre">Hombre</option><option value="Mujer">Mujer</option></select></div>
+                                <div class="form-group"><label>Edad (Años) *</label><input type="number" id="calc-edad" class="form-control" required></div>
+                                <div class="form-group"><label>Peso (kg) *</label><input type="number" step="0.1" id="calc-peso" class="form-control" required></div>
+                                <div class="form-group"><label>Altura (cm) *</label><input type="number" id="calc-altura" class="form-control" required></div>
+                                <div class="form-group"><label>Cuello (cm) *</label><input type="number" step="0.1" id="calc-cuello" class="form-control" required></div>
+                                <div class="form-group"><label>Cintura (cm) *</label><input type="number" step="0.1" id="calc-cintura" class="form-control" required></div>
+                                <div class="form-group" id="grupo-cadera"><label>Cadera (cm) *</label><input type="number" step="0.1" id="calc-cadera" class="form-control" required></div>
+                                <div class="form-group"><label>Pecho (cm)</label><input type="number" step="0.1" id="calc-pecho" class="form-control"></div>
+                                <div class="form-group"><label>Brazo (cm)</label><input type="number" step="0.1" id="calc-brazo" class="form-control"></div>
+                                <div class="form-group"><label>Pantorrilla (cm)</label><input type="number" step="0.1" id="calc-pantorrilla" class="form-control"></div>
+                            </div>
+                                
+                            <div class="medidas-grid" style="grid-template-columns: 1fr 1fr; margin-top: 10px;">
+                                <div class="form-group">
+                                    <label>Factor de Actividad</label>
+                                    <select id="calc-actividad" class="form-control">
+                                        <option value="1.2">Sedentario (0 días de gym)</option>
+                                        <option value="1.375">Ligero (1-3 días de gym)</option>
+                                        <option value="1.55">Moderado (4-5 días de gym)</option>
+                                        <option value="1.725">Activo (6 días de gym)</option>
+                                        <option value="1.9">Muy Activo (Doble turno)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Objetivo</label>
+                                    <select id="calc-objetivo" class="form-control">
+                                        <option value="500">Volumen (+500 kcal)</option>
+                                        <option value="-500">Definición (-500 kcal)</option>
+                                        <option value="0">Mantenimiento (0 kcal)</option>
+                                    </select>
+                                </div>
+                            </div>
+                                
+                            <div style="text-align: right; margin-top: 15px;">
+                                <button type="button" class="action-btn" style="background-color: #00E5FF; color: black; padding: 10px 20px;" onclick="ejecutarCalculoYGuardar()">🧮 Calcular y Guardar Historial</button>
+                            </div>
+                        </form>
+                                
+                        <div id="box-resultados" class="resultados-box" style="display: none;"></div>
+                        <div style="text-align: right; margin-top: 10px;">
+                            <button id="btn-enviar-reporte" class="action-btn btn-wsp" style="display: none; padding: 10px;">📲 Enviar Reporte por WhatsApp</button>
+                        </div>
+                    </div>
+                                
+                    <div id="tab-marketing" class="tab-content">
+                        <h4 style="color: #E0E0E0; margin-bottom: 15px;">Enviar Plantillas Rápidas</h4>
+                        <button class="action-btn btn-wsp" onclick="enviarWspRecordatorio()" style="margin-bottom: 10px;">📲 Recordatorio de Pago</button><br>
+                        <button class="action-btn btn-wsp" onclick="enviarWspCumpleanos()">🎉 Feliz Cumpleaños</button>
+                    </div>
+                                
+                    <div id="tab-deudas" class="tab-content">
+                        <h4 style="color: #FF9800; margin-bottom: 15px;">Historial de Fiados Activos e Inactivos</h4>
+                        <table class="data-table" style="font-size: 13px;">
+                            <thead><tr><th>Fecha</th><th>Producto</th><th>Monto</th><th>Estado</th></tr></thead>
+                            <tbody id="tabla-perfil-deudas"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-renovar" class="modal-overlay" style="z-index: 2000;">
+        <div class="modal-content" style="width: 350px;">
+            <h3>⚡ Renovación Acumulativa</h3>
+            <form id="form-renovar">
+                <input type="hidden" id="renovar-socio-id">
+                <div class="form-group">
+                    <label>Socio</label>
+                    <input type="text" id="renovar-socio-nombre" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Nuevo Plan</label>
+                    <select id="renovar-plan" class="form-control" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Método de Pago</label>
+                    <select id="renovar-metodo" class="form-control" required>
+                        <option value="Efectivo">💵 Efectivo</option>
+                        <option value="Yape">📱 Yape</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nueva Fecha Vencimiento</label>
+                    <input type="date" id="renovar-vencimiento" class="form-control" readonly>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="document.getElementById('modal-renovar').style.display='none'">Cancelar</button>
+                    <button type="submit" class="action-btn" style="background-color: #25D366; color: black; padding: 10px 15px;">Cobrar Renovación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/socios.js"></script>
+    <script>
+        function cambiarPestana(idTab, elemento) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(idTab).classList.add('active');
+            elemento.classList.add('active');
+        }
+        function abrirGrupoWsp() {
+            require('electron').shell.openExternal('https://web.whatsapp.com/');
+        }
+        // CORRECCIÓN: Borrada la función verificarGenero() ya que ya no necesitamos ocultar la cadera
+    </script>
+</body>
+</html>

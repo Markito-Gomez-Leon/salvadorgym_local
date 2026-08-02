@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Finanzas de Hoy - Salvador Gym</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <h1 class="logo-text">SALVADOR <span class="neon-text">GYM</span></h1>
+            <button class="nav-btn" onclick="location.href='index.html'">🛒 Caja Rápida</button>
+            <button class="nav-btn" onclick="location.href='socios.html'">👥 Socios</button>
+            <button class="nav-btn" onclick="location.href='membresias.html'">🎟️ Membresías</button>
+            <button class="nav-btn" onclick="location.href='inventario.html'">📦 Inventario</button>
+            <button class="nav-btn active" onclick="location.href='finanzas.html'">💰 Finanzas Hoy</button>
+            <button class="nav-btn" onclick="location.href='caja_global.html'">📊 Caja Global</button>
+            <button class="nav-btn" onclick="location.href='configuracion.html'">⚙️ Configuración</button>
+            <button class="floating-wsp-btn" onclick="abrirGrupoWsp()">💬 Grupo WhatsApp</button>
+        </div>
+
+        <div class="main-panel">
+            <div class="header-actions">
+                <h2>Finanzas de HOY (Cierre de Caja)</h2>
+                <button class="action-btn btn-wsp" onclick="exportarExcelHoy()" style="padding: 12px 20px;">📊 Exportar Excel (Hoy)</button>
+            </div>
+
+            <div class="mini-card-grid">
+                <div class="mini-card" style="border-left: 4px solid #25D366;">
+                    <h4>Caja Efectivo</h4>
+                    <div class="amount" id="total-efectivo" style="color: #25D366;">S/ 0.00</div>
+                </div>
+                
+                <div class="mini-card" style="border-left: 4px solid #742484;">
+                    <h4>Cuenta Yape</h4>
+                    <div class="amount" id="total-yape" style="color: #00E5FF;">S/ 0.00</div>
+                </div>
+
+                <div class="mini-card" style="border-left: 4px solid #F5F5F5; background-color: rgba(255,255,255,0.05);">
+                    <h4 style="color: #F5F5F5;">Total Ingresos Reales</h4>
+                    <div class="amount" id="total-ingresos-hoy" style="color: #F5F5F5;">S/ 0.00</div>
+                </div>
+
+                <div class="mini-card" style="border-left: 4px solid #FF0055; background-color: rgba(255,0,85,0.05);">
+                    <h4 style="color: #FF0055;">Fiados (Pendientes)</h4>
+                    <div class="amount" id="total-fiados-hoy" style="color: #FF0055;">S/ 0.00</div>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Hora</th>
+                        <th>Producto/Servicio</th>
+                        <th>Monto</th>
+                        <th>Método de Pago</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-ventas-hoy">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script src="../js/finanzas.js"></script>
+    <script>
+        function abrirGrupoWsp() {
+            require('electron').shell.openExternal('https://web.whatsapp.com/');
+        }
+    </script>
+</body>
+</html>
