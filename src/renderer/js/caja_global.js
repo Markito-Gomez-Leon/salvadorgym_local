@@ -7,7 +7,6 @@ let gastosTotales = 0;
 let gananciaNeta = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Rango automático: 1er día del mes actual hasta hoy
     const hoy = new Date();
     const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
     
@@ -16,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     cargarCajaGlobal();
 
-    // Eventos de Gasto
     document.getElementById('btn-nuevo-gasto').addEventListener('click', () => {
         document.getElementById('form-gasto').reset();
         document.getElementById('modal-gasto').style.display = 'flex';
@@ -32,7 +30,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if(err) console.error(err);
             document.getElementById('modal-gasto').style.display = 'none';
             cargarCajaGlobal();
+            mostrarAlertaNeon("El egreso ha sido registrado correctamente en la contabilidad.", "info", "✅ Gasto Guardado");
         });
+    });
+
+    document.getElementById('input-importar-excel').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const csvText = event.target.result;
+            procesarImportacionCSV(csvText);
+            e.target.value = ''; 
+        };
+        reader.readAsText(file);
     });
 });
 
@@ -50,10 +62,8 @@ function cargarCajaGlobal() {
     let hasta = document.getElementById('filtro-hasta').value;
     if(!desde || !hasta) return;
     
-    // Le decimos que cubra hasta las 23:59 de ese día para no omitir la última venta
     hasta = hasta + " 23:59:59"; 
 
-    // Consultamos ventas y egresos paralelamente y los unificamos
     Promise.all([
         new Promise(resolve => db.all(`SELECT * FROM ventas WHERE fecha >= ? AND fecha <= ?`, [desde, hasta], (err, rows) => resolve(rows || []))),
         new Promise(resolve => db.all(`SELECT * FROM egresos WHERE fecha >= ? AND fecha <= ?`, [desde, hasta], (err, rows) => resolve(rows || [])))
@@ -67,7 +77,6 @@ function cargarCajaGlobal() {
             registrosGlobales.push({ fecha: e.fecha, concepto: e.descripcion, tipo: 'Egreso', monto: e.monto, metodo: 'Efectivo/Banco' });
         });
 
-        // Ordenar cronológicamente (lo más nuevo arriba)
         registrosGlobales.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
         registrosGlobales.forEach(r => {
@@ -78,7 +87,6 @@ function cargarCajaGlobal() {
             if (r.tipo === 'Ingreso') {
                 tipoStyle = 'color: #25D366; font-weight: bold;';
                 
-                // ERROR GRAVE SOLUCIONADO: Los fiados no se suman a los ingresos brutos
                 if (r.metodo === 'Fiado') {
                     tr.classList.add('row-fiado');
                     metodoStyle = 'color: #FF0055; font-weight: bold;';
@@ -101,7 +109,6 @@ function cargarCajaGlobal() {
             tbody.appendChild(tr);
         });
 
-        // Fórmula matemática de ganancia
         gananciaNeta = ingresosBrutos - gastosTotales;
 
         document.getElementById('total-ingresos').textContent = `S/ ${ingresosBrutos.toFixed(2)}`;
@@ -110,10 +117,68 @@ function cargarCajaGlobal() {
     });
 }
 
-// CREADOR DE REPORTE EXCEL (GLOBAL)
+async function procesarImportacionCSV(csvText) {
+    const lineas = csvText.split('\n');
+    let insertados = 0;
+    let omitidos = 0;
+
+    for (let i = 0; i < lineas.length; i++) {
+        const linea = lineas[i].trim();
+        
+        if (!linea || linea.includes('sep=;') || linea.includes('Fecha y Hora') || linea.includes('=== RESUMEN')) {
+            if(linea.includes('=== RESUMEN')) break; 
+            continue;
+        }
+
+        const cols = linea.split(';');
+        if (cols.length >= 5) {
+            const fecha = cols[0];
+            const concepto = cols[1];
+            const tipo = cols[2];
+            const monto = parseFloat(cols[3]);
+            const metodo = cols[4];
+
+            if (tipo === 'Ingreso') {
+                const existe = await new Promise(resolve => {
+                    db.get(`SELECT id FROM ventas WHERE fecha = ? AND producto_nombre = ? AND precio_total = ?`, [fecha, concepto, monto], (err, row) => {
+                        resolve(row ? true : false);
+                    });
+                });
+                
+                if (!existe) {
+                    await new Promise(resolve => {
+                        db.run(`INSERT INTO ventas (producto_nombre, precio_total, metodo_pago, fecha) VALUES (?, ?, ?, ?)`, [concepto, monto, metodo, fecha], () => resolve());
+                    });
+                    insertados++;
+                } else {
+                    omitidos++;
+                }
+            } else if (tipo === 'Egreso') {
+                const existe = await new Promise(resolve => {
+                    db.get(`SELECT id FROM egresos WHERE fecha = ? AND descripcion = ? AND monto = ?`, [fecha, concepto, monto], (err, row) => {
+                        resolve(row ? true : false);
+                    });
+                });
+                
+                if (!existe) {
+                    await new Promise(resolve => {
+                        db.run(`INSERT INTO egresos (descripcion, monto, fecha) VALUES (?, ?, ?)`, [concepto, monto, fecha], () => resolve());
+                    });
+                    insertados++;
+                } else {
+                    omitidos++;
+                }
+            }
+        }
+    }
+
+    mostrarAlertaNeon(`Análisis Completado.\n\nNuevos registros: ${insertados}\nOmitidos (ya existían): ${omitidos}\n\nCaja Global actualizada.`, 'info', '📥 Importación Finalizada');
+    cargarCajaGlobal();
+}
+
 window.exportarExcelGlobal = () => {
     if (registrosGlobales.length === 0) {
-        alert("No hay registros en este rango de fechas para exportar.");
+        mostrarAlertaNeon("No hay registros en este rango de fechas para exportar.", "danger", "⚠️ Sin Datos");
         return;
     }
 
@@ -124,7 +189,6 @@ window.exportarExcelGlobal = () => {
         csvContent += `${r.fecha};${r.concepto};${r.tipo};${r.monto.toFixed(2)};${r.metodo}\n`;
     });
 
-    // 3 FILAS DE RESUMEN AL FINAL DEL EXCEL
     csvContent += `\n\n=== RESUMEN FINANCIERO CONSOLIDADO ===;\n`;
     csvContent += `1. Ingresos Brutos Totales (Reales Cobrados);S/ ${ingresosBrutos.toFixed(2)}\n`;
     csvContent += `2. Egresos / Gastos Totales;S/ ${gastosTotales.toFixed(2)}\n`;

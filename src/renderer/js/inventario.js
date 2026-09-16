@@ -29,8 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>S/ ${producto.precio.toFixed(2)}</td>
                     <td>${stockHtml}</td>
                     <td>
-                        <button class="action-btn btn-edit" onclick="editarProducto(${producto.id}, '${producto.nombre}', ${producto.precio}, ${producto.stock})">Editar</button>
-                        <button class="action-btn btn-delete" onclick="eliminarProducto(${producto.id}, '${producto.nombre}')">Eliminar</button>
+                        <button class="action-btn btn-edit" onclick="editarProducto(${producto.id}, '${producto.nombre.replace(/'/g, "\\'")}', ${producto.precio}, ${producto.stock})">Editar</button>
+                        <button class="action-btn btn-delete" onclick="eliminarProducto(${producto.id}, '${producto.nombre.replace(/'/g, "\\'")}')">Eliminar</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -49,12 +49,17 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.eliminarProducto = (id, nombre) => {
-        if (confirm(`¿Estás seguro de eliminar "${nombre}" del inventario?`)) {
-            db.run("DELETE FROM productos WHERE id = ?", [id], (err) => {
-                if (err) return console.error(err);
-                cargarInventario();
-            });
-        }
+        mostrarConfirmacionNeon(
+            `¿Estás seguro de eliminar "${nombre}" del inventario de forma permanente?`,
+            () => {
+                db.run("DELETE FROM productos WHERE id = ?", [id], (err) => {
+                    if (err) return console.error(err);
+                    cargarInventario();
+                    mostrarAlertaNeon("Producto eliminado exitosamente.", "info", "🗑️ Borrado Confirmado");
+                });
+            },
+            "❌ Eliminar Producto"
+        );
     };
 
     // --- Eventos de la Ventana Emergente (Modal) ---
@@ -87,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (err) return console.error(err);
                     modal.style.display = 'none';
                     cargarInventario();
+                    mostrarAlertaNeon("Producto actualizado correctamente.", "success", "✅ Stock Actualizado");
                 }
             );
         } else {
@@ -98,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (err) return console.error(err);
                     modal.style.display = 'none';
                     cargarInventario();
+                    mostrarAlertaNeon("Nuevo producto agregado al inventario.", "success", "✅ Producto Registrado");
                 }
             );
         }

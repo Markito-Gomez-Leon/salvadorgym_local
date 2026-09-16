@@ -42,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.innerHTML = `${producto.nombre} <br><br><span style="color: #00E5FF; font-weight: bold;">S/ ${producto.precio.toFixed(2)}</span><br><small style="color: #888;">Stock: ${producto.stock}</small>`;
                 
                 btn.addEventListener('click', () => {
-                    // ID único temporal (uid) para borrar ítem
                     carrito.push({ ...producto, uid: Date.now() + Math.random() });
                     total += producto.precio;
                     actualizarCarrito();
@@ -83,24 +82,23 @@ document.addEventListener('DOMContentLoaded', () => {
         actualizarCarrito();
     };
 
-    // =========================================================
-    // MOTOR DE COBRO ANTI-LAG CON LÓGICA DE FIADO RESTAURADA
-    // =========================================================
     function procesarCobro(metodoPago, socioId = null) {
-        if (carrito.length === 0) return alert('El carrito está vacío.');
+        if (carrito.length === 0) {
+            mostrarAlertaNeon('El carrito está vacío. Agrega productos para cobrar.', 'danger', '⚠️ Carrito Vacío');
+            return;
+        }
 
         const descripcionCarrito = carrito.map(i => i.nombre).join(', ');
         const fechaHoraFija = obtenerFechaHoraPeru();
 
-        // 1. Bloqueo de UI (Evita Lag Visual)
+        // Bloqueo de UI (Evita Lag Visual)
         const botones = document.querySelectorAll('.pay-btn');
         botones.forEach(b => { b.disabled = true; b.style.opacity = '0.4'; });
         totalSection.innerHTML = `<span style="color: #FF9800;">⚡ Procesando...</span>`;
 
-        // 2. Macro-tarea Asíncrona
         setTimeout(() => {
             db.serialize(() => {
-                db.run("BEGIN TRANSACTION"); // Arrancamos transacción masiva
+                db.run("BEGIN TRANSACTION"); 
 
                 const stmtVenta = db.prepare(`INSERT INTO ventas (producto_nombre, precio_total, metodo_pago, fecha) VALUES (?, ?, ?, ?)`);
                 const stmtStock = db.prepare(`UPDATE productos SET stock = stock - 1 WHERE id = ?`);
@@ -123,9 +121,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 db.run("COMMIT", (err) => {
                     if (err) {
                         console.error("Error crítico procesando venta:", err);
-                        alert("Hubo un error en la base de datos.");
+                        mostrarAlertaNeon("Hubo un error en la base de datos al procesar la venta.", "danger", "⚠️ Error Crítico");
                     } else {
-                        // Limpieza tras el éxito
+                        mostrarAlertaNeon(`¡Venta procesada!\nTotal: S/ ${total.toFixed(2)}\nMétodo: ${metodoPago}`, "success", "✅ Venta Exitosa");
                         carrito = [];
                         total = 0;
                         actualizarCarrito();
@@ -133,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         modalFiado.style.display = 'none';
                     }
                     
-                    // Restauración visual
                     botones.forEach(b => { b.disabled = false; b.style.opacity = '1'; });
                 });
             });
@@ -143,14 +140,19 @@ document.addEventListener('DOMContentLoaded', () => {
     yapeBtn.addEventListener('click', () => procesarCobro('Yape'));
     cashBtn.addEventListener('click', () => procesarCobro('Efectivo'));
 
-    // --- LÓGICA DE FIADO ---
     fiadoBtn.addEventListener('click', () => {
-        if (carrito.length === 0) return alert('Agrega algo al carrito para poder fiarlo.');
+        if (carrito.length === 0) {
+            mostrarAlertaNeon('Agrega algo al carrito para poder fiarlo.', 'danger', '⚠️ Acción no permitida');
+            return;
+        }
         
         selectSocioFiado.innerHTML = '';
         db.all("SELECT id, nombre FROM socios ORDER BY nombre ASC", [], (err, socios) => {
             if (err) return console.error(err);
-            if (socios.length === 0) return alert('No hay socios registrados para fiar.');
+            if (socios.length === 0) {
+                mostrarAlertaNeon('No hay socios registrados en el sistema para poder fiar.', 'danger', '⚠️ Directorio Vacío');
+                return;
+            }
             
             socios.forEach(socio => {
                 const opcion = document.createElement('option');
@@ -163,22 +165,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnCerrarFiado.addEventListener('click', () => modalFiado.style.display = 'none');
+    
     btnConfirmarFiado.addEventListener('click', () => {
         const socioId = selectSocioFiado.value;
-        if(socioId) procesarCobro('Fiado', socioId);
+        if(socioId) {
+            procesarCobro('Fiado', socioId);
+        } else {
+            mostrarAlertaNeon("Por favor, selecciona a un socio de la lista para registrar la deuda.", "danger", "⚠️ Selección Requerida");
+        }
     });
 
-    // --- COBRO DE DEUDAS (AHORA CON MOTOR ANTI-LAG) ---
     btnAbrirCobrarDeuda.addEventListener('click', () => {
         selectDeudaCobrar.innerHTML = ''; 
         const query = `
             SELECT f.id, s.nombre, f.descripcion, f.monto, f.fecha 
-            FROM fiados f JOIN socios s ON f.socio_id = s.id 
-            WHERE f.estado = 'Pendiente' ORDER BY f.id ASC
+            FROM fiados f 
+            JOIN socios s ON f.socio_id = s.id 
+            WHERE f.estado = 'Pendiente' 
+            ORDER BY f.id ASC
         `;
         db.all(query, [], (err, deudas) => {
             if (err) return console.error(err);
-            if (deudas.length === 0) return alert('No hay deudas pendientes por cobrar.');
+            if (deudas.length === 0) {
+                mostrarAlertaNeon('No hay deudas pendientes por cobrar. ¡Todos los socios están al día!', 'info', '👍 Todo al día');
+                return;
+            }
             
             deudas.forEach(deuda => {
                 const fechaSegura = deuda.fecha ? deuda.fecha.split(' ')[0] : 'Fecha no reg.';
@@ -195,7 +206,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnConfirmarCobroDeuda.addEventListener('click', () => {
         const seleccion = selectDeudaCobrar.value; 
-        if (!seleccion) return;
+        if (!seleccion) {
+            mostrarAlertaNeon("Selecciona una deuda de la lista para cobrar.", "danger", "⚠️ Selección Requerida");
+            return;
+        }
 
         const partes = seleccion.split('_');
         const deudaId = partes[0];
@@ -206,7 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const fechaHoraFija = obtenerFechaHoraPeru();
         const conceptoVenta = `Pago de Deuda: ${desc}`;
 
-        // Anti-Lag Visual para el Modal
         btnConfirmarCobroDeuda.disabled = true;
         btnConfirmarCobroDeuda.innerHTML = "⚡ Procesando...";
 
@@ -222,9 +235,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     btnConfirmarCobroDeuda.innerHTML = "✅ Cobrar y Registrar";
                     if (err) {
                         console.error("Error en cobro de deuda:", err);
-                        alert("Error cobrando la deuda.");
+                        mostrarAlertaNeon("Error al cobrar la deuda en la base de datos.", "danger", "⚠️ Error Crítico");
                     } else {
                         modalCobrarDeuda.style.display = 'none';
+                        mostrarAlertaNeon(`¡Deuda cobrada con éxito!\nIngresó S/ ${monto.toFixed(2)} a tu caja por ${metodoPago}.`, 'success', '💰 Deuda Liquidada');
                     }
                 });
             });
@@ -232,4 +246,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     cargarProductos();
+    actualizarCarrito();
 });

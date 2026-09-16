@@ -22,9 +22,13 @@
         <div class="main-panel">
             <div class="header-actions">
                 <h2>Caja Global y Egresos</h2>
-                <div>
+                <div style="display: flex; gap: 10px;">
                     <button id="btn-nuevo-gasto" class="action-btn" style="background-color: #ff4444; color: white; padding: 12px 20px;">- Registrar Gasto</button>
-                    <button class="action-btn btn-wsp" onclick="exportarExcelGlobal()" style="padding: 12px 20px;">📊 Exportar Reporte Completo</button>
+                    
+                    <!-- NUEVOS BOTONES DE BACKUP -->
+                    <input type="file" id="input-importar-excel" accept=".csv" style="display: none;">
+                    <button class="action-btn" onclick="document.getElementById('input-importar-excel').click()" style="background-color: #742484; color: white; padding: 12px 20px;">📥 Importar Reporte</button>
+                    <button class="action-btn btn-wsp" onclick="exportarExcelGlobal()" style="padding: 12px 20px;">📊 Exportar Reporte</button>
                 </div>
             </div>
 
@@ -38,11 +42,11 @@
 
             <div class="mini-card-grid">
                 <div class="mini-card">
-                    <h4>Ingresos Brutos (Dinero Real Cobrado)</h4>
+                    <h4>Ingresos Brutos</h4>
                     <div class="amount" id="total-ingresos" style="color: #25D366;">S/ 0.00</div>
                 </div>
                 <div class="mini-card">
-                    <h4>Gastos Totales (Egresos)</h4>
+                    <h4>Gastos Totales</h4>
                     <div class="amount" id="total-egresos" style="color: #ff4444;">S/ 0.00</div>
                 </div>
                 <div class="mini-card" style="border-left: 4px solid #00E5FF; background-color: rgba(0, 229, 255, 0.05);">
@@ -87,6 +91,7 @@
         </div>
     </div>
 
+    <script src="../js/alertas.js"></script>
     <script src="../js/caja_global.js"></script>
     <script>
         function abrirGrupoWsp() {

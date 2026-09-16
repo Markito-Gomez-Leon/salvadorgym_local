@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>S/ ${plan.precio.toFixed(2)}</td>
                     <td>${plan.duracion_meses} ${plan.duracion_meses === 1 ? 'Mes' : 'Meses'}</td>
                     <td>
-                        <button class="action-btn btn-edit" onclick="editarMembresia(${plan.id}, '${plan.nombre}', ${plan.precio}, ${plan.duracion_meses})">Editar</button>
+                        <button class="action-btn btn-edit" onclick="editarMembresia(${plan.id}, '${plan.nombre.replace(/'/g, "\\'")}', ${plan.precio}, ${plan.duracion_meses})">Editar</button>
                         <button class="action-btn btn-delete" onclick="deshabilitarMembresia(${plan.id})">Eliminar</button>
                     </td>
                 `;
@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (err) console.error(err);
                 modal.style.display = 'none';
                 cargarMembresias();
+                mostrarAlertaNeon("Membresía actualizada con éxito.", "success", "✅ Plan Editado");
             });
         } else {
             // Si no hay ID, estamos CREANDO una nueva (siempre con activo = 1)
@@ -70,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (err) console.error(err);
                 modal.style.display = 'none';
                 cargarMembresias();
+                mostrarAlertaNeon("Nueva membresía habilitada en el sistema.", "success", "✅ Plan Creado");
             });
         }
     });
@@ -87,13 +89,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 6. Deshabilitar Membresía (Eliminación Lógica)
     window.deshabilitarMembresia = (id) => {
-        if(confirm('¿Estás seguro de que deseas eliminar este plan? Ya no aparecerá para nuevos registros, pero se mantendrá en el historial de ventas para cuadrar caja.')) {
-            // Cambiamos el estado a activo = 0 en lugar de hacer un DELETE
-            db.run(`UPDATE membresias SET activo = 0 WHERE id = ?`, [id], (err) => {
-                if (err) console.error(err);
-                cargarMembresias();
-            });
-        }
+        mostrarConfirmacionNeon(
+            "¿Estás seguro de que deseas eliminar este plan?\n\nYa no aparecerá para nuevos registros, pero se mantendrá en el historial de ventas para cuadrar caja.",
+            () => {
+                db.run(`UPDATE membresias SET activo = 0 WHERE id = ?`, [id], (err) => {
+                    if (err) console.error(err);
+                    cargarMembresias();
+                    mostrarAlertaNeon("Plan eliminado del catálogo.", "info", "✅ Membresía Deshabilitada");
+                });
+            },
+            "⚠️ Eliminar Plan"
+        );
     };
 
     // Iniciar tabla al arrancar

@@ -1,11 +1,14 @@
+// Archivo: src/renderer/js/configuracion.js
 const db = require('../../main/db.js');
 
 document.addEventListener('DOMContentLoaded', () => {
-    const selectRutina = document.getElementById('select-rutina');
-    const textoRutina = document.getElementById('texto-rutina');
-    const btnGuardarRutina = document.getElementById('btn-guardar-rutina');
-
-    // Cargar credenciales actuales
+    
+    // ==========================================
+    // 1. LÓGICA DE CREDENCIALES (ACCESOS)
+    // ==========================================
+    const formCredenciales = document.getElementById('form-credenciales');
+    
+    // Cargar credenciales actuales desde SQLite
     db.get("SELECT usuario, password FROM configuracion WHERE id = 1", [], (err, row) => {
         if (row) {
             document.getElementById('config-user').value = row.usuario;
@@ -13,59 +16,115 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('form-credenciales').addEventListener('submit', (e) => {
+    formCredenciales.addEventListener('submit', (e) => {
         e.preventDefault();
         const user = document.getElementById('config-user').value;
         const pass = document.getElementById('config-pass').value;
-        db.run("UPDATE configuracion SET usuario = ?, password = ? WHERE id = 1", [user, pass], () => {
-            alert('Credenciales actualizadas correctamente.');
+        
+        db.run("UPDATE configuracion SET usuario = ?, password = ? WHERE id = 1", [user, pass], (err) => {
+            if (err) return console.error(err);
+            mostrarAlertaNeon('Accesos actualizados correctamente. Usa estos datos la próxima vez que inicies sesión.', 'success', '🔐 Seguridad Actualizada');
         });
     });
 
-    // --- LÓGICA DE MARKETING (RUTINAS WSP) ---
+    // ==========================================
+    // 2. GESTOR DE PLANTILLAS WHATSAPP (CRUD)
+    // ==========================================
+    const tablaWsp = document.getElementById('tabla-wsp');
+    const formWsp = document.getElementById('form-wsp');
+    const inputWspId = document.getElementById('input-wsp-id');
+    const inputWspTitulo = document.getElementById('input-wsp-titulo');
+    const inputWspMensaje = document.getElementById('input-wsp-mensaje');
+    const btnGuardarWsp = document.getElementById('btn-guardar-wsp');
+    const btnCancelarWsp = document.getElementById('btn-cancelar-wsp');
 
-    // Plantillas Maestras Predeterminadas
-    const rutinasPredeterminadas = {
-        'Hombre_Volumen': "¡Hola [NOMBRE]! 💪🔥\nSegún tu evaluación, esta es tu Rutina de VOLUMEN (Hipertrofia):\n\nLunes: Pecho y Tríceps (Pesado)\nMartes: Espalda y Bíceps\nMiércoles: Pierna Completa\nJueves: Hombros y Abdomen\nViernes: Brazo Completo\n\nRecuerda: Come tu superávit calórico. ¡A mutar! 🦍",
-        'Hombre_Definicion': "¡Hola [NOMBRE]! ⚡🔥\nSegún tu evaluación, esta es tu Rutina de DEFINICIÓN (Quema de Grasa):\n\nLunes: Full Body + 20min Cardio HIIT\nMartes: Push (Pecho/Hombro/Tríceps)\nMiércoles: Pull (Espalda/Bíceps) + Cardio\nJueves: Piernas pesadas\nViernes: Full Body + 30min Cardio LISS\n\nRecuerda: Mantén tu déficit calórico estricto. ✂️",
-        'Hombre_Mantenimiento': "¡Hola [NOMBRE]! 🛡️\nTu objetivo es MANTENIMIENTO y recomposición. Aquí tu rutina:\n\nEntrena intenso 4 días a la semana (L, M, J, V). Divide en torso/pierna. Mantén un equilibrio entre cardio suave y fuerza bruta para mantener masa y cuidar el corazón. 🚀",
-        'Mujer_Volumen': "¡Hola [NOMBRE]! 🍑🔥\nEsta es tu Rutina de VOLUMEN enfocada en Tren Inferior:\n\nLunes: Glúteos y Femorales (Pesado)\nMartes: Espalda y Hombros\nMiércoles: Cuádriceps y Pantorrillas\nJueves: Descanso Activo\nViernes: Glúteos y Abdomen\n\nRecuerda comer bien para construir esa masa muscular. ¡A darle! 🚀",
-        'Mujer_Definicion': "¡Hola [NOMBRE]! ⚡💃\nEsta es tu Rutina de DEFINICIÓN y Tonificación:\n\nLunes: Pierna + 20min Cardio\nMartes: Tren Superior + Abdomen\nMiércoles: Cardio HIIT 30 min\nJueves: Glúteos con bandas y peso moderado\nViernes: Full Body express\n\nRespeta el déficit para marcar. ✂️",
-        'Mujer_Mantenimiento': "¡Hola [NOMBRE]! ✨\nTu plan es de MANTENIMIENTO y salud integral:\n\nCombina 3 días de pesas (enfocado en resistencia y tonificación) con 2 días de clases grupales o cardio divertido. Mantén tus calorías estables. ¡Mantente fuerte y sana! 🧘‍♀️"
+    function cargarPlantillas() {
+        tablaWsp.innerHTML = '';
+        db.all("SELECT * FROM plantillas_whatsapp ORDER BY id DESC", [], (err, plantillas) => {
+            if (err) return console.error(err);
+            
+            plantillas.forEach(p => {
+                const tr = document.createElement('tr');
+                
+                // Cortamos el mensaje visualmente si es muy largo para que la tabla no se deforme
+                const mensajeCorto = p.mensaje.length > 60 ? p.mensaje.substring(0, 60) + '...' : p.mensaje;
+                
+                tr.innerHTML = `
+                    <td style="color: #00E5FF; font-weight: bold;">${p.titulo}</td>
+                    <td style="font-size: 13px; color: #ccc;">${mensajeCorto}</td>
+                    <td>
+                        <button class="action-btn btn-edit" onclick="editarPlantilla(${p.id}, '${p.titulo.replace(/'/g, "\\'")}', '${p.mensaje.replace(/[\n\r]/g, '\\n').replace(/'/g, "\\'")}')" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;">Editar</button>
+                        <button class="action-btn" onclick="borrarPlantilla(${p.id})" style="background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">🗑️ Anular</button>
+                    </td>
+                `;
+                tablaWsp.appendChild(tr);
+            });
+        });
+    }
+
+    // Función para inyectar datos en el formulario al presionar "Editar"
+    window.editarPlantilla = (id, titulo, mensaje) => {
+        inputWspId.value = id;
+        inputWspTitulo.value = titulo;
+        inputWspMensaje.value = mensaje.replace(/\\n/g, '\n'); // Restaura los saltos de línea reales
+        
+        btnGuardarWsp.textContent = "💾 Actualizar Plantilla";
+        btnGuardarWsp.style.backgroundColor = "#00E5FF"; // Cambiamos a azul neón para indicar modo edición
+        btnCancelarWsp.style.display = "block";
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // Sube la pantalla suavemente
     };
 
-    function inicializarRutinas() {
-        // Verificar si existen. Si no, insertarlas.
-        db.all("SELECT * FROM plantillas_whatsapp", [], (err, filas) => {
-            if (filas.length === 0) {
-                for (const [clave, mensaje] of Object.entries(rutinasPredeterminadas)) {
-                    db.run("INSERT INTO plantillas_whatsapp (titulo, mensaje) VALUES (?, ?)", [clave, mensaje]);
-                }
-                setTimeout(cargarRutinaEnEditor, 500); // Dar tiempo a que guarde
-            } else {
-                cargarRutinaEnEditor();
-            }
-        });
-    }
+    // Función para eliminar
+    window.borrarPlantilla = (id) => {
+        mostrarConfirmacionNeon(
+            "¿Estás seguro de que deseas ELIMINAR esta plantilla de WhatsApp de forma permanente?",
+            () => {
+                db.run("DELETE FROM plantillas_whatsapp WHERE id = ?", [id], (err) => {
+                    if (err) return console.error(err);
+                    cargarPlantillas();
+                    mostrarAlertaNeon("Plantilla eliminada de la base de datos.", "info", "🗑️ Borrado Exitoso");
+                });
+            },
+            "❌ Borrar Plantilla"
+        );
+    };
 
-    function cargarRutinaEnEditor() {
-        const claveSeleccionada = selectRutina.value;
-        db.get("SELECT mensaje FROM plantillas_whatsapp WHERE titulo = ?", [claveSeleccionada], (err, row) => {
-            if (row) {
-                textoRutina.value = row.mensaje;
-            }
-        });
-    }
-
-    selectRutina.addEventListener('change', cargarRutinaEnEditor);
-
-    btnGuardarRutina.addEventListener('click', () => {
-        const claveSeleccionada = selectRutina.value;
-        const nuevoMensaje = textoRutina.value;
-        db.run("UPDATE plantillas_whatsapp SET mensaje = ? WHERE titulo = ?", [nuevoMensaje, claveSeleccionada], () => {
-            alert('¡Rutina actualizada y guardada para tus próximos envíos!');
-        });
+    // Botón para cancelar la edición y volver a modo "Crear Nuevo"
+    btnCancelarWsp.addEventListener('click', () => {
+        formWsp.reset();
+        inputWspId.value = '';
+        btnGuardarWsp.textContent = "+ Agregar / Guardar Plantilla";
+        btnGuardarWsp.style.backgroundColor = "#25D366";
+        btnCancelarWsp.style.display = "none";
     });
 
-    inicializarRutinas();
+    // Envío del formulario (Sirve para INSERTAR y ACTUALIZAR)
+    formWsp.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = inputWspId.value;
+        const titulo = inputWspTitulo.value;
+        const mensaje = inputWspMensaje.value;
+        
+        if (id) {
+            // MODO EDICIÓN: El campo oculto tiene ID, ejecutamos UPDATE
+            db.run("UPDATE plantillas_whatsapp SET titulo = ?, mensaje = ? WHERE id = ?", [titulo, mensaje, id], (err) => {
+                if (err) return console.error(err);
+                mostrarAlertaNeon("Plantilla actualizada exitosamente.", "success", "✅ CRM Actualizado");
+                btnCancelarWsp.click(); // Esto resetea el formulario y los botones a su estado original
+                cargarPlantillas();
+            });
+        } else {
+            // MODO NUEVO REGISTRO: El campo oculto está vacío, ejecutamos INSERT
+            db.run("INSERT INTO plantillas_whatsapp (titulo, mensaje) VALUES (?, ?)", [titulo, mensaje], (err) => {
+                if (err) return console.error(err);
+                mostrarAlertaNeon("Nueva plantilla de WhatsApp guardada.", "success", "✅ Plantilla Creada");
+                formWsp.reset();
+                cargarPlantillas();
+            });
+        }
+    });
+
+    // Inicializar cargando la tabla al abrir la ventana
+    cargarPlantillas();
 });

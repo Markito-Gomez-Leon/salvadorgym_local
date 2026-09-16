@@ -11,6 +11,8 @@
   "author": "VENDERPROYECTOWEB",
   "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
     "sqlite3": "^6.0.1"
   },
   "devDependencies": {
@@ -29,7 +31,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },

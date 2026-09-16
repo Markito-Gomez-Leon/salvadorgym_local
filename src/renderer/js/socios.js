@@ -7,6 +7,7 @@ let planesMembresia = [];
 document.addEventListener('DOMContentLoaded', () => {
     cargarPlanes();
     cargarSociosYCumpleanos();
+    cargarPlantillasCRM();
     
     const btnNuevoSocio = document.getElementById('btn-nuevo-socio');
     const modalSocio = document.getElementById('modal-socio');
@@ -19,6 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
         formSocio.reset();
         document.getElementById('socio-id').value = '';
         document.getElementById('modal-titulo').textContent = 'Registrar Nuevo Socio';
+        
+        document.getElementById('socio-plan').disabled = false;
+        document.getElementById('socio-metodo').disabled = false;
+        document.getElementById('socio-vencimiento').disabled = false;
+
         modalSocio.style.display = 'flex';
         calcularVencimientoLocal(selectPlan.value, new Date(), inputVencimiento);
     });
@@ -35,9 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const nombre = document.getElementById('socio-nombre').value;
         const telefono = document.getElementById('socio-telefono').value;
         const nacimiento = document.getElementById('socio-nacimiento').value;
+        const vencimiento = document.getElementById('socio-vencimiento').value;
+        
         const planSelect = document.getElementById('socio-plan');
         const planNombre = planSelect.options[planSelect.selectedIndex].text;
-        const vencimiento = document.getElementById('socio-vencimiento').value;
         const metodoPagoSocio = document.getElementById('socio-metodo').value; 
  
         const planElegido = planesMembresia.find(p => p.id == planSelect.value);
@@ -45,11 +52,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const fechaHoraFija = obtenerFechaHoraPeru();
  
         if (id) {
-            db.run(`UPDATE socios SET nombre = ?, telefono = ?, fecha_nacimiento = ?, plan = ?, fecha_vencimiento = ? WHERE id = ?`,
-                [nombre, telefono, nacimiento, planNombre, vencimiento, id], (err) => {
+            db.run(`UPDATE socios SET nombre = ?, telefono = ?, fecha_nacimiento = ?, fecha_vencimiento = ? WHERE id = ?`,
+                [nombre, telefono, nacimiento, vencimiento, id], (err) => {
                     if (err) console.error(err);
                     modalSocio.style.display = 'none';
                     cargarSociosYCumpleanos();
+                    mostrarAlertaNeon("Socio actualizado con éxito.", "info", "✅ Edición Guardada");
                 });
         } else {
             db.run(`INSERT INTO socios (nombre, telefono, fecha_nacimiento, plan, fecha_vencimiento) VALUES (?, ?, ?, ?, ?)`,
@@ -61,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     modalSocio.style.display = 'none';
                     cargarSociosYCumpleanos();
+                    mostrarAlertaNeon("Nuevo socio guardado y cobro registrado en Caja.", "success", "🎉 ¡Socio Registrado!");
                 });
         }
     });
@@ -91,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('modal-renovar').style.display = 'none';
             document.getElementById('modal-perfil').style.display = 'none';
             cargarSociosYCumpleanos();
+            mostrarAlertaNeon(`Renovación cobrada con éxito (${metodoPagoRenovacion}).`, "success", "⚡ Plan Renovado");
         });
     });
  
@@ -102,10 +112,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 hoy.setHours(0,0,0,0);
                 let vActual = new Date(row.fecha_vencimiento);
                 let fechaBase = (vActual > hoy) ? vActual : new Date();
-                
                 calcularVencimientoLocal(e.target.value, fechaBase, document.getElementById('renovar-vencimiento'));
             }
         });
+    });
+
+    const selectWspCRM = document.getElementById('select-plantilla-wsp');
+    const inputWspCRM = document.getElementById('preview-mensaje-wsp');
+    const btnEnviarWspCRM = document.getElementById('btn-enviar-wsp-crm');
+
+    if (selectWspCRM) {
+        selectWspCRM.addEventListener('change', (e) => {
+            let mensajeCrudo = e.target.value;
+            if(window.nombreSocioActual) {
+                mensajeCrudo = mensajeCrudo.replace(/\[NOMBRE\]/gi, window.nombreSocioActual);
+                mensajeCrudo = mensajeCrudo.replace(/\(NOMBRE\)/gi, window.nombreSocioActual);
+            }
+            inputWspCRM.value = mensajeCrudo;
+        });
+    }
+
+    if (btnEnviarWspCRM) {
+        btnEnviarWspCRM.addEventListener('click', () => {
+            if (!inputWspCRM.value) return mostrarAlertaNeon("Por favor, selecciona o escribe un mensaje para enviar.", "danger", "⚠️ Mensaje Vacío");
+            if (!window.telefonoSocioActual) return mostrarAlertaNeon("El socio no tiene un teléfono registrado.", "danger", "⚠️ Sin Teléfono");
+            
+            let phone = window.telefonoSocioActual.replace(/\D/g, '');
+            let url = `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(inputWspCRM.value)}`;
+            shell.openExternal(url);
+        });
+    }
+
+    // EVENTO DE IMPORTACIÓN (BACKUP DE SOCIOS)
+    document.getElementById('input-importar-socios').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const csvText = event.target.result;
+            procesarImportacionSociosCSV(csvText);
+            e.target.value = ''; 
+        };
+        reader.readAsText(file);
     });
 });
  
@@ -121,6 +170,20 @@ function cargarPlanes() {
                 const opt = `<option value="${p.id}">${p.nombre} (S/ ${p.precio})</option>`;
                 select.innerHTML += opt;
                 selectRenovar.innerHTML += opt;
+            });
+        }
+    });
+}
+
+function cargarPlantillasCRM() {
+    const selectWspCRM = document.getElementById('select-plantilla-wsp');
+    if(!selectWspCRM) return;
+    
+    selectWspCRM.innerHTML = '<option value="">-- Selecciona un mensaje --</option>';
+    db.all("SELECT * FROM plantillas_whatsapp ORDER BY id DESC", [], (err, plantillas) => {
+        if (!err) {
+            plantillas.forEach(p => {
+                selectWspCRM.innerHTML += `<option value="${p.mensaje}">${p.titulo}</option>`;
             });
         }
     });
@@ -184,6 +247,9 @@ window.abrirMegaPerfil = (id, nombre, telefono, fechaVencimiento) => {
     document.getElementById('box-resultados').style.display = 'none';
     document.getElementById('btn-enviar-reporte').style.display = 'none';
     
+    document.getElementById('select-plantilla-wsp').selectedIndex = 0;
+    document.getElementById('preview-mensaje-wsp').value = '';
+    
     window.telefonoSocioActual = telefono;
     window.nombreSocioActual = nombre;
     
@@ -217,7 +283,10 @@ function cargarHistorialProgreso(socioId) {
         });
     });
 }
- 
+
+// ----------------------------------------------------
+// MAGIA: COBROS PARCIALES DE DEUDAS (MODIFICADO)
+// ----------------------------------------------------
 function cargarDeudasPerfil(socioId) {
     const tbody = document.getElementById('tabla-perfil-deudas');
     tbody.innerHTML = '';
@@ -225,17 +294,61 @@ function cargarDeudasPerfil(socioId) {
         if(err) return;
         rows.forEach(r => {
             let colorEstado = r.estado === 'Pagado' ? '#25D366' : '#FF0055';
+            
+            // Inyectamos el selector de Yape/Efectivo y el botón "Pagar" directamente en la columna de Estado
+            let htmlAccion = '';
+            if (r.estado === 'Pendiente') {
+                htmlAccion = `
+                    <div style="display:flex; gap:5px; align-items:center;">
+                        <select id="metodo-fiado-${r.id}" style="background:#111; color:#fff; border:1px solid #444; padding:4px; border-radius:4px; font-size:12px;">
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Yape">Yape</option>
+                        </select>
+                        <button onclick="cobrarDeudaIndividual(${r.id}, ${r.monto}, '${r.descripcion.replace(/'/g, "\\'")}', ${socioId})" 
+                        style="background:#25D366; color:black; border:none; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer;">Pagar</button>
+                    </div>
+                `;
+            } else {
+                htmlAccion = `<span style="color:${colorEstado}; font-weight:bold;">✅ Cancelado</span>`;
+            }
+
             tbody.innerHTML += `
                 <tr>
                     <td>${r.fecha.split(' ')[0]}</td>
                     <td>${r.descripcion}</td>
-                    <td>S/ ${r.monto.toFixed(2)}</td>
-                    <td style="color:${colorEstado}; font-weight:bold;">${r.estado}</td>
+                    <td style="color: #FF9800; font-weight: bold;">S/ ${r.monto.toFixed(2)}</td>
+                    <td>${htmlAccion}</td>
                 </tr>
             `;
         });
     });
 }
+
+// NUEVA FUNCIÓN: Cobro Individual con Alerta Neón
+window.cobrarDeudaIndividual = (idFiado, monto, descripcion, socioId) => {
+    const metodoElegido = document.getElementById(`metodo-fiado-${idFiado}`).value;
+
+    mostrarConfirmacionNeon(
+        `¿Confirmas el pago de S/ ${monto.toFixed(2)} por "${descripcion}" usando ${metodoElegido}?`,
+        () => {
+            const fechaFija = obtenerFechaHoraPeru();
+            const concepto = `Pago de Deuda: ${descripcion}`;
+
+            // Insertamos el dinero real a las Finanzas
+            db.run(`INSERT INTO ventas (producto_nombre, precio_total, metodo_pago, fecha) VALUES (?, ?, ?, ?)`, 
+                [concepto, monto, metodoElegido, fechaFija], (err) => {
+                    if (err) return console.error(err);
+                    
+                    // Actualizamos la deuda a 'Pagado'
+                    db.run(`UPDATE fiados SET estado = 'Pagado' WHERE id = ?`, [idFiado], () => {
+                        mostrarAlertaNeon(`El pago de S/ ${monto.toFixed(2)} ingresó a tu caja de hoy.`, "success", "💰 Deuda Liquidada");
+                        cargarDeudasPerfil(socioId); // Recarga la tabla para que cambie a ✅ Cancelado
+                    });
+                });
+        },
+        "💰 Confirmar Pago Parcial"
+    );
+};
  
 window.ejecutarCalculoYGuardar = () => {
     const genero = document.getElementById('calc-genero').value;
@@ -244,8 +357,6 @@ window.ejecutarCalculoYGuardar = () => {
     const altura = parseFloat(document.getElementById('calc-altura').value);
     const cuello = parseFloat(document.getElementById('calc-cuello').value);
     const cintura = parseFloat(document.getElementById('calc-cintura').value);
-    
-    // CORRECCIÓN: Ahora cadera siempre debe existir (se quitó el condicional del ternario)
     const cadera = parseFloat(document.getElementById('calc-cadera').value);
     
     const pecho = document.getElementById('calc-pecho').value ? parseFloat(document.getElementById('calc-pecho').value) : 0;
@@ -255,9 +366,8 @@ window.ejecutarCalculoYGuardar = () => {
     const factorActividad = parseFloat(document.getElementById('calc-actividad').value);
     const ajusteObjetivo = parseFloat(document.getElementById('calc-objetivo').value);
  
-    // CORRECCIÓN: La validación ahora requiere cadera obligatoriamente sin importar el género
     if(!edad || !peso || !altura || !cuello || !cintura || !cadera) {
-        alert('Por favor, completa todos los campos obligatorios marcados con asterisco (*).');
+        mostrarAlertaNeon('Por favor, completa todos los campos obligatorios marcados con asterisco (*).', 'danger', '⚠️ Datos Incompletos');
         return;
     }
  
@@ -283,8 +393,6 @@ window.ejecutarCalculoYGuardar = () => {
     const carbos = (caloriasObjetivo - (proteinas * 4) - (grasas * 9)) / 4;
  
     const ratioV = pecho && cintura ? (pecho / cintura).toFixed(2) : 'N/A';
-    
-    // CORRECCIÓN: El ICC siempre se calcula porque cadera ya es obligatoria
     const icc = (cintura / cadera).toFixed(2);
  
     let reporteLimpio = `
@@ -329,20 +437,11 @@ Ratio en V (Pecho/Cintura): ${ratioV}
     const jsonMedidas = JSON.stringify({ edad, altura, cuello, cintura, cadera, pecho, brazo, pantorrilla });
     db.run(`INSERT INTO progreso_socios (socio_id, peso, grasa, medidas, fecha) VALUES (?, ?, ?, ?, ?)`,
         [socioId, peso, porcentajeGrasa, jsonMedidas, obtenerFechaHoraPeru()], (err) => {
-            if(!err) cargarHistorialProgreso(socioId);
+            if(!err) {
+                cargarHistorialProgreso(socioId);
+                mostrarAlertaNeon('Progreso guardado correctamente.', 'info', '📈 Datos Clínicos');
+            }
         });
-};
- 
-window.enviarWspRecordatorio = () => {
-    let phone = window.telefonoSocioActual.replace(/\D/g, '');
-    let msg = `Hola ${window.nombreSocioActual}, te recordamos que tu membresía en Salvador Gym está por vencer. ¡Te esperamos para renovar y seguir entrenando duro!`;
-    shell.openExternal(`https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`);
-};
- 
-window.enviarWspCumpleanos = () => {
-    let phone = window.telefonoSocioActual.replace(/\D/g, '');
-    let msg = `🎉 ¡Hola ${window.nombreSocioActual}! Todo el equipo de Salvador Gym te desea un muy feliz cumpleaños. ¡Que la pases genial y que tus ganancias musculares se multipliquen! 💪`;
-    shell.openExternal(`https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`);
 };
  
 function calcularVencimientoLocal(planId, fechaBaseDate, inputTarget) {
@@ -361,7 +460,105 @@ function obtenerFechaHoraPeru() {
     d.setHours(d.getHours() - 5); 
     return d.toISOString().replace('T', ' ').substring(0, 19);
 }
+
+function obtenerFechaLocal() {
+    let d = new Date();
+    d.setHours(d.getHours() - 5);
+    return d.toISOString().replace('T', ' ').substring(0, 19);
+}
  
 window.editarSocio = (id) => {
-    alert("Función de edición habilitada en futuras integraciones.");
+    db.get(`SELECT * FROM socios WHERE id = ?`, [id], (err, socio) => {
+        if (err) return console.error(err);
+        if (socio) {
+            document.getElementById('socio-id').value = socio.id;
+            document.getElementById('socio-nombre').value = socio.nombre;
+            document.getElementById('socio-telefono').value = socio.telefono;
+            document.getElementById('socio-nacimiento').value = socio.fecha_nacimiento || '';
+
+            const selectPlan = document.getElementById('socio-plan');
+            for (let i = 0; i < selectPlan.options.length; i++) {
+                if (selectPlan.options[i].text === socio.plan) {
+                    selectPlan.selectedIndex = i;
+                    break;
+                }
+            }
+            
+            document.getElementById('socio-vencimiento').value = socio.fecha_vencimiento;
+            
+            document.getElementById('socio-plan').disabled = true;
+            document.getElementById('socio-metodo').disabled = true;
+            document.getElementById('socio-vencimiento').disabled = false;
+
+            document.getElementById('modal-titulo').textContent = 'Editar Socio';
+            document.getElementById('modal-socio').style.display = 'flex';
+        }
+    });
 };
+
+window.exportarExcelSocios = () => {
+    db.all(`SELECT * FROM socios ORDER BY id ASC`, [], (err, rows) => {
+        if (err) return console.error(err);
+        if (rows.length === 0) {
+            mostrarAlertaNeon("No hay socios registrados para exportar.", "danger", "⚠️ Directorio Vacío");
+            return;
+        }
+
+        let csvContent = "sep=;\n";
+        csvContent += "ID;Nombre;Telefono;Fecha Nacimiento;Plan;Fecha Vencimiento\n";
+
+        rows.forEach(s => {
+            const nac = s.fecha_nacimiento ? s.fecha_nacimiento : '';
+            csvContent += `${s.id};${s.nombre};${s.telefono};${nac};${s.plan};${s.fecha_vencimiento}\n`;
+        });
+
+        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Backup_Socios_SG_${obtenerFechaLocal().split(' ')[0]}.csv`);
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+};
+
+async function procesarImportacionSociosCSV(csvText) {
+    const lineas = csvText.split('\n');
+    let insertados = 0;
+    let omitidos = 0;
+
+    for (let i = 0; i < lineas.length; i++) {
+        const linea = lineas[i].trim();
+        if (!linea || linea.includes('sep=;') || linea.includes('Nombre') || linea.includes('ID;')) continue;
+
+        const cols = linea.split(';');
+        if (cols.length >= 5) {
+            const nombre = cols[1];
+            const telefono = cols[2];
+            const nacimiento = cols[3] || '';
+            const plan = cols[4] || 'Mensualidad';
+            const vencimiento = cols[5] || obtenerFechaLocal().split(' ')[0];
+
+            const existe = await new Promise(resolve => {
+                db.get(`SELECT id FROM socios WHERE nombre = ? AND telefono = ?`, [nombre, telefono], (err, row) => {
+                    resolve(row ? true : false);
+                });
+            });
+
+            if (!existe) {
+                await new Promise(resolve => {
+                    db.run(`INSERT INTO socios (nombre, telefono, fecha_nacimiento, plan, fecha_vencimiento) VALUES (?, ?, ?, ?, ?)`, 
+                        [nombre, telefono, nacimiento, plan, vencimiento], () => resolve());
+                });
+                insertados++;
+            } else {
+                omitidos++;
+            }
+        }
+    }
+
+    mostrarAlertaNeon(`✅ Análisis Completado.\n\nNuevos socios restaurados: ${insertados}\nSocios omitidos (ya existían): ${omitidos}`, "info", "📥 Backup Restaurado");
+    cargarSociosYCumpleanos();
+}

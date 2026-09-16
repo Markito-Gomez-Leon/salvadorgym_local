@@ -9,20 +9,19 @@ let transaccionesHoy = [];
 let sumaEfectivo = 0;
 let sumaYape = 0;
 let sumaFiados = 0;
-let sumaIngresosReales = 0; // Efectivo + Yape
+let sumaIngresosReales = 0;
 
 function cargarFinanzasHoy() {
     const tbody = document.getElementById('tabla-ventas-hoy');
     tbody.innerHTML = '';
     
-    // Reiniciar contadores
     sumaEfectivo = 0;
     sumaYape = 0;
     sumaFiados = 0;
     sumaIngresosReales = 0;
     transaccionesHoy = [];
 
-    const hoyStr = obtenerFechaLocal().split(' ')[0]; // Solo Año-Mes-Día
+    const hoyStr = obtenerFechaLocal().split(' ')[0];
 
     db.all(`SELECT * FROM ventas WHERE fecha LIKE ? ORDER BY id DESC`, [`${hoyStr}%`], (err, rows) => {
         if (err) return console.error(err);
@@ -32,7 +31,6 @@ function cargarFinanzasHoy() {
             const tr = document.createElement('tr');
             let metodoStyle = '';
             
-            // LÓGICA DE CLASIFICACIÓN CONTABLE
             if (venta.metodo_pago === 'Fiado') {
                 sumaFiados += venta.precio_total;
                 tr.classList.add('row-fiado');
@@ -42,22 +40,25 @@ function cargarFinanzasHoy() {
                 sumaIngresosReales += venta.precio_total;
                 metodoStyle = 'color: #00E5FF; font-weight: bold;';
             } else {
-                // Por descarte es Efectivo
                 sumaEfectivo += venta.precio_total;
                 sumaIngresosReales += venta.precio_total;
                 metodoStyle = 'color: #25D366; font-weight: bold;';
             }
 
+            // ATENCIÓN: Mejoramos el diseño usando la clase 'btn-delete' (borde neón y efecto hover) y un ícono más claro.
             tr.innerHTML = `
                 <td>${venta.fecha.split(' ')[1]}</td>
                 <td><strong>${venta.producto_nombre}</strong></td>
                 <td>S/ ${venta.precio_total.toFixed(2)}</td>
                 <td style="${metodoStyle}">${venta.metodo_pago}</td>
+                <td>
+                    <button class="action-btn btn-delete" style="padding: 6px 12px; border-radius: 6px; font-size: 13px;" 
+                    onclick="anularVenta(${venta.id}, '${venta.producto_nombre.replace(/'/g, "\\'")}', '${venta.metodo_pago}', '${venta.fecha}', ${venta.precio_total})">🗑️ Anular</button>
+                </td>
             `;
             tbody.appendChild(tr);
         });
 
-        // Actualizar UI de Tarjetas
         document.getElementById('total-efectivo').textContent = `S/ ${sumaEfectivo.toFixed(2)}`;
         document.getElementById('total-yape').textContent = `S/ ${sumaYape.toFixed(2)}`;
         document.getElementById('total-ingresos-hoy').textContent = `S/ ${sumaIngresosReales.toFixed(2)}`;
@@ -65,10 +66,40 @@ function cargarFinanzasHoy() {
     });
 }
 
-// CREADOR DE REPORTE EXCEL (HOY) CON DESGLOSE DETALLADO
+// ANULACIÓN CON TUS NUEVAS ALERTAS NEÓN
+window.anularVenta = (idVenta, productoNombre, metodoPago, fechaVenta, montoVenta) => {
+    mostrarConfirmacionNeon(
+        `¿Estás seguro de que deseas ANULAR el registro de:\n"${productoNombre}"?\n\nEsta acción recalculará tu caja de hoy.`,
+        () => {
+            db.run(`DELETE FROM ventas WHERE id = ?`, [idVenta], (err) => {
+                if (err) {
+                    console.error("Error al anular la venta:", err);
+                    mostrarAlertaNeon("Hubo un error al intentar anular desde la base de datos.", "danger", "⚠️ Error Crítico");
+                    return;
+                }
+
+                // ELIMINACIÓN INDIVIDUAL DE DEUDA: Borra usando Fecha + Nombre + Monto
+                if (metodoPago === 'Fiado') {
+                    db.run(`DELETE FROM fiados WHERE fecha = ? AND descripcion = ? AND monto = ?`, [fechaVenta, productoNombre, montoVenta]);
+                }
+
+                // Devolver Stock si es físico
+                if (!productoNombre.includes('Mensualidad') && !productoNombre.includes('Renovación') && !productoNombre.includes('Pago de')) {
+                    db.run(`UPDATE productos SET stock = stock + 1 WHERE nombre = ?`, [productoNombre]);
+                }
+
+                mostrarAlertaNeon("Registro anulado y contabilidad corregida exitosamente.", "info", "✅ Anulación Completada");
+                cargarFinanzasHoy();
+            });
+        },
+        "🗑️ Confirmar Anulación"
+    );
+};
+
+// EXPORTACIÓN CON ALERTA NEÓN
 window.exportarExcelHoy = () => {
     if (transaccionesHoy.length === 0) {
-        alert("No hay transacciones registradas hoy para exportar.");
+        mostrarAlertaNeon("No hay transacciones registradas hoy para exportar.", "danger", "⚠️ Sin datos");
         return;
     }
 
@@ -80,7 +111,6 @@ window.exportarExcelHoy = () => {
         csvContent += `${hora};${v.producto_nombre};${v.precio_total.toFixed(2)};${v.metodo_pago}\n`;
     });
 
-    // Filas automáticas de resumen ordenadas de forma contable
     csvContent += `\n\n=== RESUMEN DEL DIA (CIERRE DE CAJA) ===;\n`;
     csvContent += `A. Total en Caja Efectivo;S/ ${sumaEfectivo.toFixed(2)}\n`;
     csvContent += `B. Total en Cuenta Yape;S/ ${sumaYape.toFixed(2)}\n`;

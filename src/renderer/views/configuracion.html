@@ -16,57 +16,69 @@
             <button class="nav-btn" onclick="location.href='finanzas.html'">💰 Finanzas Hoy</button>
             <button class="nav-btn" onclick="location.href='caja_global.html'">📊 Caja Global</button>
             <button class="nav-btn active" onclick="location.href='configuracion.html'">⚙️ Configuración</button>
-            
             <button class="floating-wsp-btn" onclick="abrirGrupoWsp()">💬 Grupo WhatsApp</button>
         </div>
 
         <div class="main-panel">
-            <h2>⚙️ Configuración y Marketing (WSP)</h2>
+            <h2>⚙️ Configuración y Marketing</h2>
             
             <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
                 
-                <div style="background: rgba(26, 26, 26, 0.95); padding: 20px; border-radius: 8px; height: fit-content; backdrop-filter: blur(5px);">
-                    <h3 style="color: #ff4444; margin-top: 0;">🔐 Accesos del Sistema</h3>
+                <!-- Panel: Credenciales -->
+                <div style="background: rgba(26, 26, 26, 0.95); padding: 20px; border-radius: 8px; height: fit-content; border: 1px solid #333;">
+                    <h3 style="color: #ff4444; margin-top: 0;">🔐 Cambio de Contraseña</h3>
                     <form id="form-credenciales">
                         <div class="form-group">
-                            <label>Usuario Administrador</label>
+                            <label>Usuario</label>
                             <input type="text" id="config-user" class="form-control" required>
                         </div>
                         <div class="form-group">
                             <label>Nueva Contraseña</label>
                             <input type="text" id="config-pass" class="form-control" required>
                         </div>
-                        <button type="submit" class="pay-btn cash-btn">Actualizar Accesos</button>
+                        <button type="submit" class="pay-btn cash-btn" style="margin: 0; width: 100%;">Actualizar Usuario y Contraseña</button>
                     </form>
                 </div>
 
-                <div style="background: rgba(26, 26, 26, 0.95); padding: 20px; border-radius: 8px; backdrop-filter: blur(5px);">
-                    <h3 style="color: #25D366; margin-top: 0;">📲 Editor de Rutinas (WhatsApp)</h3>
-                    <p style="color: #888; font-size: 13px;">Usa <b>[NOMBRE]</b> en el texto para que el sistema lo cambie automáticamente por el nombre de tu socio al enviarlo.</p>
+                <!-- Panel: Gestor de Plantillas -->
+                <div style="background: rgba(26, 26, 26, 0.95); padding: 20px; border-radius: 8px; border: 1px solid #333;">
+                    <h3 style="color: #25D366; margin-top: 0;">📲 Gestor de Plantillas</h3>
+                    <p style="color: #888; font-size: 13px; margin-bottom: 15px;">Crea mensajes predeterminados para enviarlos rápido desde el perfil del socio. Usa <b>[NOMBRE]</b> para que el sistema lo salude automáticamente.</p>
                     
-                    <div class="form-group">
-                        <label>Selecciona la rutina maestra a editar:</label>
-                        <select id="select-rutina" class="form-control" style="border-color: #25D366;">
-                            <option value="Hombre_Volumen">Hombre - Volumen (+500 kcal)</option>
-                            <option value="Hombre_Definicion">Hombre - Definición (-500 kcal)</option>
-                            <option value="Hombre_Mantenimiento">Hombre - Mantenimiento (0 kcal)</option>
-                            <option value="Mujer_Volumen">Mujer - Volumen (+500 kcal)</option>
-                            <option value="Mujer_Definicion">Mujer - Definición (-500 kcal)</option>
-                            <option value="Mujer_Mantenimiento">Mujer - Mantenimiento (0 kcal)</option>
-                        </select>
-                    </div>
+                    <form id="form-wsp" style="margin-bottom: 20px; background: #222; padding: 15px; border-radius: 6px;">
+                        <input type="hidden" id="input-wsp-id">
+                        <div class="form-group">
+                            <label>Título de la Plantilla (Ej. Promo Verano, Rutina Pecho)</label>
+                            <input type="text" id="input-wsp-titulo" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Mensaje Exacto</label>
+                            <textarea id="input-wsp-mensaje" class="form-control" style="height: 100px; resize: none;" required></textarea>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button type="submit" id="btn-guardar-wsp" class="action-btn" style="background-color: #25D366; color: black; padding: 10px 20px; flex: 1; font-weight: bold;">+ Guardar Plantilla</button>
+                            <button type="button" id="btn-cancelar-wsp" class="btn-cancel" style="display: none; flex: 1;">Cancelar Edición</button>
+                        </div>
+                    </form>
 
-                    <div class="form-group">
-                        <label>Contenido de la rutina:</label>
-                        <textarea id="texto-rutina" class="form-control" style="height: 250px; font-family: monospace; resize: none;"></textarea>
-                    </div>
-
-                    <button id="btn-guardar-rutina" class="pay-btn" style="background-color: #25D366;">💾 Guardar Plantilla de Rutina</button>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">Título</th>
+                                <th style="width: 55%;">Mensaje</th>
+                                <th style="width: 20%;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-wsp">
+                        </tbody>
+                    </table>
                 </div>
 
             </div>
         </div>
     </div>
+
+    <script src="../js/alertas.js"></script>
     <script src="../js/configuracion.js"></script>
     <script>
         function abrirGrupoWsp() {

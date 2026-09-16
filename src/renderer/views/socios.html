@@ -26,7 +26,13 @@
         <div class="main-panel">
             <div class="header-actions">
                 <h2>Directorio de Socios</h2>
-                <button id="btn-nuevo-socio" class="action-btn" style="background-color: #00E5FF; color: black; padding: 12px 20px;">+ Nuevo Socio</button>
+                <div style="display: flex; gap: 10px;">
+                    <!-- NUEVOS BOTONES DE BACKUP -->
+                    <input type="file" id="input-importar-socios" accept=".csv" style="display: none;">
+                    <button class="action-btn" onclick="document.getElementById('input-importar-socios').click()" style="background-color: #742484; color: white; padding: 12px 20px;">📥 Importar Reporte</button>
+                    <button class="action-btn btn-wsp" onclick="exportarExcelSocios()" style="padding: 12px 20px;">📊 Exportar Reporte</button>
+                    <button id="btn-nuevo-socio" class="action-btn" style="background-color: #00E5FF; color: black; padding: 12px 20px;">+ Nuevo Socio</button>
+                </div>
             </div>
 
             <table class="data-table">
@@ -69,14 +75,14 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Método de Pago (1ra Mensualidad)</label>
+                    <label>Método de Pago</label>
                     <select id="socio-metodo" class="form-control" required>
                         <option value="Efectivo">💵 Efectivo</option>
                         <option value="Yape">📱 Yape</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Fecha de Vencimiento (Autocalculado)</label>
+                    <label>Fecha de Vencimiento</label>
                     <input type="date" id="socio-vencimiento" class="form-control" required>
                 </div>
                 <div class="modal-actions">
@@ -107,7 +113,7 @@
                 <div class="mega-modal-content">
                     <div class="tabs-header">
                         <button class="tab-btn active" onclick="cambiarPestana('tab-calculadora', this)">💪 Calculadora Fitness</button>
-                        <button class="tab-btn" onclick="cambiarPestana('tab-marketing', this)">📱 WhatsApp CRM</button>
+                        <button class="tab-btn" onclick="cambiarPestana('tab-marketing', this)">📱 WhatsApp</button>
                         <button class="tab-btn" onclick="cambiarPestana('tab-deudas', this)">💰 Fiados</button>
                     </div>
 
@@ -159,10 +165,20 @@
                         </div>
                     </div>
                                 
+                    <!-- NUEVA PESTAÑA: WHATSAPP CRM -->
                     <div id="tab-marketing" class="tab-content">
-                        <h4 style="color: #E0E0E0; margin-bottom: 15px;">Enviar Plantillas Rápidas</h4>
-                        <button class="action-btn btn-wsp" onclick="enviarWspRecordatorio()" style="margin-bottom: 10px;">📲 Recordatorio de Pago</button><br>
-                        <button class="action-btn btn-wsp" onclick="enviarWspCumpleanos()">🎉 Feliz Cumpleaños</button>
+                        <h4 style="color: #25D366; margin-bottom: 15px;">📱 Centro de Marketing (WhatsApp)</h4>
+                        <div class="form-group">
+                            <label>1. Elige una plantilla rápida</label>
+                            <select id="select-plantilla-wsp" class="form-control">
+                                <option value="">-- Selecciona un mensaje --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>2. Revisa o edita tu mensaje antes de enviar</label>
+                            <textarea id="preview-mensaje-wsp" class="form-control" style="height: 120px; resize: none;"></textarea>
+                        </div>
+                        <button id="btn-enviar-wsp-crm" class="action-btn" style="background-color: #25D366; color: #000; font-weight: bold; padding: 12px 20px;">📲 Enviar por WhatsApp Web</button>
                     </div>
                                 
                     <div id="tab-deudas" class="tab-content">
@@ -209,6 +225,7 @@
         </div>
     </div>
 
+    <script src="../js/alertas.js"></script>
     <script src="../js/socios.js"></script>
     <script>
         function cambiarPestana(idTab, elemento) {
@@ -220,7 +237,6 @@
         function abrirGrupoWsp() {
             require('electron').shell.openExternal('https://web.whatsapp.com/');
         }
-        // CORRECCIÓN: Borrada la función verificarGenero() ya que ya no necesitamos ocultar la cadera
     </script>
 </body>
 </html>

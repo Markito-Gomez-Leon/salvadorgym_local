@@ -21,8 +21,8 @@
 
         <div class="main-panel">
             <div class="header-actions">
-                <h2>Finanzas de HOY (Cierre de Caja)</h2>
-                <button class="action-btn btn-wsp" onclick="exportarExcelHoy()" style="padding: 12px 20px;">📊 Exportar Excel (Hoy)</button>
+                <h2>Cierre de Caja(reicia cada 24 horas)</h2>
+                <button class="action-btn btn-wsp" onclick="exportarExcelHoy()" style="padding: 12px 20px;">📊 Exportar Excel</button>
             </div>
 
             <div class="mini-card-grid">
@@ -37,12 +37,12 @@
                 </div>
 
                 <div class="mini-card" style="border-left: 4px solid #F5F5F5; background-color: rgba(255,255,255,0.05);">
-                    <h4 style="color: #F5F5F5;">Total Ingresos Reales</h4>
+                    <h4 style="color: #F5F5F5;">Total Ingresos</h4>
                     <div class="amount" id="total-ingresos-hoy" style="color: #F5F5F5;">S/ 0.00</div>
                 </div>
 
                 <div class="mini-card" style="border-left: 4px solid #FF0055; background-color: rgba(255,0,85,0.05);">
-                    <h4 style="color: #FF0055;">Fiados (Pendientes)</h4>
+                    <h4 style="color: #FF0055;">Fiados</h4>
                     <div class="amount" id="total-fiados-hoy" style="color: #FF0055;">S/ 0.00</div>
                 </div>
             </div>
@@ -54,14 +54,17 @@
                         <th>Producto/Servicio</th>
                         <th>Monto</th>
                         <th>Método de Pago</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-ventas-hoy">
-                    </tbody>
+                </tbody>
             </table>
         </div>
     </div>
     
+    <!-- ¡AQUÍ ESTÁ LA CONEXIÓN A TUS ALERTAS NEÓN! -->
+    <script src="../js/alertas.js"></script>
     <script src="../js/finanzas.js"></script>
     <script>
         function abrirGrupoWsp() {
