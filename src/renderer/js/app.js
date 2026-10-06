@@ -4,12 +4,12 @@ const db = require('../../main/db.js');
 document.addEventListener('DOMContentLoaded', () => {
     const gridProductos = document.getElementById('grid-productos');
     const ticketItemsContainer = document.querySelector('.ticket-items');
-    const totalSection = document.getElementById('texto-total');
-    const yapeBtn = document.getElementById('btn-yape');
-    const cashBtn = document.getElementById('btn-efectivo');
+    const totalSection = document.querySelector('.total-section h3');
+    const yapeBtn = document.querySelector('.yape-btn');
+    const cashBtn = document.querySelector('.cash-btn');
     
     // Elementos del Fiado
-    const fiadoBtn = document.getElementById('btn-fiado');
+    const fiadoBtn = document.querySelector('.fiado-btn');
     const modalFiado = document.getElementById('modal-fiado');
     const btnCerrarFiado = document.getElementById('btn-cerrar-fiado');
     const btnConfirmarFiado = document.getElementById('btn-confirmar-fiado');
@@ -27,20 +27,24 @@ document.addEventListener('DOMContentLoaded', () => {
     let total = 0;
 
     function obtenerFechaHoraPeru() {
-        let d = new Date();
-        d.setHours(d.getHours() - 5);
-        return d.toISOString().replace('T', ' ').substring(0, 19);
+        const ahora = new Date();
+        const año = ahora.getFullYear();
+        const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+        const dia = String(ahora.getDate()).padStart(2, '0');
+        const hora = String(ahora.getHours()).padStart(2, '0');
+        const minutos = String(ahora.getMinutes()).padStart(2, '0');
+        const segundos = String(ahora.getSeconds()).padStart(2, '0');
+        return `${año}-${mes}-${dia} ${hora}:${minutos}:${segundos}`;
     }
 
     function cargarProductos() {
-        gridProductos.innerHTML = ''; 
+        gridProductos.innerHTML = '';
         db.all("SELECT * FROM productos WHERE stock > 0 ORDER BY nombre ASC", [], (err, productos) => {
             if (err) return console.error(err);
             productos.forEach(producto => {
                 const btn = document.createElement('button');
                 btn.className = 'product-btn';
-                btn.innerHTML = `${producto.nombre} <br><br><span style="color: #00E5FF; font-weight: bold;">S/ ${producto.precio.toFixed(2)}</span><br><small style="color: #888;">Stock: ${producto.stock}</small>`;
-                
+                btn.innerHTML = `${producto.nombre} <br><small style="color: #00E5FF;">S/ ${producto.precio.toFixed(2)}</small>`;
                 btn.addEventListener('click', () => {
                     carrito.push({ ...producto, uid: Date.now() + Math.random() });
                     total += producto.precio;
@@ -52,27 +56,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function actualizarCarrito() {
-        ticketItemsContainer.innerHTML = ''; 
+        ticketItemsContainer.innerHTML = '';
         total = 0;
         carrito.forEach(item => {
             total += item.precio;
-            const div = document.createElement('div');
-            div.style.display = "flex";
-            div.style.justifyContent = "space-between";
-            div.style.alignItems = "center";
-            div.style.marginBottom = "8px";
-            div.style.color = '#E0E0E0';
-            div.style.borderBottom = "1px dashed #333";
-            div.style.paddingBottom = "8px";
+            const p = document.createElement('p');
+            p.style.display = "flex";
+            p.style.justifyContent = "space-between";
+            p.style.marginBottom = "8px";
+            p.style.color = '#E0E0E0';
+            p.style.borderBottom = "1px dashed #333";
+            p.style.paddingBottom = "5px";
             
-            div.innerHTML = `
-                <span style="font-size: 14px;">1x ${item.nombre}</span>
-                <div>
-                    <span style="color: #00E5FF; font-weight: bold; margin-right: 10px;">S/ ${item.precio.toFixed(2)}</span>
-                    <button class="btn-remove-item" onclick="borrarDelCarrito('${item.uid}')">❌</button>
-                </div>
+            p.innerHTML = `
+                <span>1x ${item.nombre} - S/ ${item.precio.toFixed(2)}</span>
+                <button class="btn-remove-item" onclick="borrarDelCarrito('${item.uid}')">❌</button>
             `;
-            ticketItemsContainer.appendChild(div);
+            ticketItemsContainer.appendChild(p);
         });
         totalSection.textContent = `Total: S/ ${total.toFixed(2)}`;
     }
@@ -83,76 +83,50 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function procesarCobro(metodoPago, socioId = null) {
-        if (carrito.length === 0) {
-            mostrarAlertaNeon('El carrito está vacío. Agrega productos para cobrar.', 'danger', '⚠️ Carrito Vacío');
-            return;
-        }
-
-        const descripcionCarrito = carrito.map(i => i.nombre).join(', ');
+        if (carrito.length === 0) return mostrarAlertaNeon('El carrito está vacío. Agrega productos antes de cobrar.', 'danger', '⚠️ Carrito Vacío');
+        
+        let itemsProcesados = 0;
         const fechaHoraFija = obtenerFechaHoraPeru();
 
-        // Bloqueo de UI (Evita Lag Visual)
-        const botones = document.querySelectorAll('.pay-btn');
-        botones.forEach(b => { b.disabled = true; b.style.opacity = '0.4'; });
-        totalSection.innerHTML = `<span style="color: #FF9800;">⚡ Procesando...</span>`;
+        carrito.forEach(item => {
+            if (metodoPago === 'Fiado' && socioId) {
+                db.run(`INSERT INTO fiados (socio_id, descripcion, monto, fecha) VALUES (?, ?, ?, ?)`,
+                    [socioId, item.nombre, item.precio, fechaHoraFija], (err) => {
+                    if(err) console.error("Error al guardar deuda individual:", err);
+                });
+            }
 
-        setTimeout(() => {
-            db.serialize(() => {
-                db.run("BEGIN TRANSACTION"); 
+            db.run(`INSERT INTO ventas (producto_nombre, precio_total, metodo_pago, fecha) VALUES (?, ?, ?, ?)`,
+                [item.nombre, item.precio, metodoPago, fechaHoraFija], (err) => {
+                    if (err) console.error("Error al registrar venta:", err);
+                });
 
-                const stmtVenta = db.prepare(`INSERT INTO ventas (producto_nombre, precio_total, metodo_pago, fecha) VALUES (?, ?, ?, ?)`);
-                const stmtStock = db.prepare(`UPDATE productos SET stock = stock - 1 WHERE id = ?`);
-                
-                let stmtFiado = null;
-                if (metodoPago === 'Fiado' && socioId) {
-                    stmtFiado = db.prepare(`INSERT INTO fiados (socio_id, descripcion, monto, fecha, estado) VALUES (?, ?, ?, ?, 'Pendiente')`);
-                    stmtFiado.run([socioId, descripcionCarrito, total, fechaHoraFija]);
+            db.run(`UPDATE productos SET stock = stock - 1 WHERE id = ?`, [item.id], (err) => {
+                itemsProcesados++;
+                if (itemsProcesados === carrito.length) {
+                    mostrarAlertaNeon(`¡Venta procesada con éxito!\nTotal: S/ ${total.toFixed(2)}\nMétodo: ${metodoPago}`, 'success', '✅ Venta Completada');
+                    carrito = [];
+                    total = 0;
+                    actualizarCarrito();
+                    cargarProductos();
+                    modalFiado.style.display = 'none';
                 }
-
-                carrito.forEach(item => {
-                    stmtStock.run([item.id]);
-                    stmtVenta.run([item.nombre, item.precio, metodoPago, fechaHoraFija]);
-                });
-
-                stmtVenta.finalize();
-                stmtStock.finalize();
-                if(stmtFiado) stmtFiado.finalize();
-
-                db.run("COMMIT", (err) => {
-                    if (err) {
-                        console.error("Error crítico procesando venta:", err);
-                        mostrarAlertaNeon("Hubo un error en la base de datos al procesar la venta.", "danger", "⚠️ Error Crítico");
-                    } else {
-                        mostrarAlertaNeon(`¡Venta procesada!\nTotal: S/ ${total.toFixed(2)}\nMétodo: ${metodoPago}`, "success", "✅ Venta Exitosa");
-                        carrito = [];
-                        total = 0;
-                        actualizarCarrito();
-                        cargarProductos(); 
-                        modalFiado.style.display = 'none';
-                    }
-                    
-                    botones.forEach(b => { b.disabled = false; b.style.opacity = '1'; });
-                });
             });
-        }, 150);
+        });
     }
 
     yapeBtn.addEventListener('click', () => procesarCobro('Yape'));
     cashBtn.addEventListener('click', () => procesarCobro('Efectivo'));
 
+    // --- LÓGICA DE DEJAR FIADO (BLINDADA CONTRA FANTASMAS) ---
     fiadoBtn.addEventListener('click', () => {
-        if (carrito.length === 0) {
-            mostrarAlertaNeon('Agrega algo al carrito para poder fiarlo.', 'danger', '⚠️ Acción no permitida');
-            return;
-        }
+        if (carrito.length === 0) return mostrarAlertaNeon('Agrega algo al carrito para poder fiarlo.', 'danger', '⚠️ Acción no permitida');
         
         selectSocioFiado.innerHTML = '';
-        db.all("SELECT id, nombre FROM socios ORDER BY nombre ASC", [], (err, socios) => {
+        // FIX ARQUITECTÓNICO: Excluimos a los socios eliminados lógicamente
+        db.all("SELECT id, nombre FROM socios WHERE activo = 1 OR activo IS NULL ORDER BY nombre ASC", [], (err, socios) => {
             if (err) return console.error(err);
-            if (socios.length === 0) {
-                mostrarAlertaNeon('No hay socios registrados en el sistema para poder fiar.', 'danger', '⚠️ Directorio Vacío');
-                return;
-            }
+            if (socios.length === 0) return mostrarAlertaNeon('No hay socios activos registrados para dar crédito.', 'danger', '⚠️ Directorio Vacío');
             
             socios.forEach(socio => {
                 const opcion = document.createElement('option');
@@ -160,6 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 opcion.textContent = socio.nombre;
                 selectSocioFiado.appendChild(opcion);
             });
+            
             modalFiado.style.display = 'flex';
         });
     });
@@ -168,15 +143,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     btnConfirmarFiado.addEventListener('click', () => {
         const socioId = selectSocioFiado.value;
-        if(socioId) {
-            procesarCobro('Fiado', socioId);
-        } else {
-            mostrarAlertaNeon("Por favor, selecciona a un socio de la lista para registrar la deuda.", "danger", "⚠️ Selección Requerida");
-        }
+        if(socioId) procesarCobro('Fiado', socioId);
     });
 
+    // --- COBRO RÁPIDO DE DEUDAS ---
     btnAbrirCobrarDeuda.addEventListener('click', () => {
-        selectDeudaCobrar.innerHTML = ''; 
+        selectDeudaCobrar.innerHTML = '';
+        
+        // Se mantiene el inner join natural, si un fantasma debe dinero, permitiremos que lo pague.
         const query = `
             SELECT f.id, s.nombre, f.descripcion, f.monto, f.fecha 
             FROM fiados f 
@@ -184,20 +158,22 @@ document.addEventListener('DOMContentLoaded', () => {
             WHERE f.estado = 'Pendiente' 
             ORDER BY f.id ASC
         `;
+        
         db.all(query, [], (err, deudas) => {
             if (err) return console.error(err);
-            if (deudas.length === 0) {
-                mostrarAlertaNeon('No hay deudas pendientes por cobrar. ¡Todos los socios están al día!', 'info', '👍 Todo al día');
-                return;
-            }
+            if (deudas.length === 0) return mostrarAlertaNeon('No hay deudas pendientes por cobrar. ¡Todos los socios están al día!', 'info', '👍 Todo al día');
             
             deudas.forEach(deuda => {
                 const fechaSegura = deuda.fecha ? deuda.fecha.split(' ')[0] : 'Fecha no reg.';
+                const descripcionVisual = `${deuda.nombre} debe S/${deuda.monto.toFixed(2)} (${deuda.descripcion}) - ${fechaSegura}`;
+                
                 const opcion = document.createElement('option');
                 opcion.value = `${deuda.id}_${deuda.monto}_${deuda.descripcion}`;
-                opcion.textContent = `${deuda.nombre} debe S/${deuda.monto.toFixed(2)} (${deuda.descripcion}) - ${fechaSegura}`;
+                opcion.textContent = descripcionVisual;
+                
                 selectDeudaCobrar.appendChild(opcion);
             });
+            
             modalCobrarDeuda.style.display = 'flex';
         });
     });
@@ -205,44 +181,29 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCerrarCobrarDeuda.addEventListener('click', () => modalCobrarDeuda.style.display = 'none');
 
     btnConfirmarCobroDeuda.addEventListener('click', () => {
-        const seleccion = selectDeudaCobrar.value; 
-        if (!seleccion) {
-            mostrarAlertaNeon("Selecciona una deuda de la lista para cobrar.", "danger", "⚠️ Selección Requerida");
-            return;
-        }
+        const seleccion = selectDeudaCobrar.value;
+        if (!seleccion) return;
 
         const partes = seleccion.split('_');
         const deudaId = partes[0];
         const monto = parseFloat(partes[1]);
-        const desc = partes.slice(2).join('_'); 
+        const desc = partes.slice(2).join('_');
         
         const metodoPago = selectMetodoCobroDeuda.value;
         const fechaHoraFija = obtenerFechaHoraPeru();
         const conceptoVenta = `Pago de Deuda: ${desc}`;
 
-        btnConfirmarCobroDeuda.disabled = true;
-        btnConfirmarCobroDeuda.innerHTML = "⚡ Procesando...";
-
-        setTimeout(() => {
-            db.serialize(() => {
-                db.run("BEGIN TRANSACTION");
+        db.run(`INSERT INTO ventas (producto_nombre, precio_total, metodo_pago, fecha) VALUES (?, ?, ?, ?)`,
+            [conceptoVenta, monto, metodoPago, fechaHoraFija], (err) => {
+                if (err) return console.error("Error al registrar venta de deuda:", err);
                 
-                db.run(`INSERT INTO ventas (producto_nombre, precio_total, metodo_pago, fecha) VALUES (?, ?, ?, ?)`, [conceptoVenta, monto, metodoPago, fechaHoraFija]);
-                db.run(`UPDATE fiados SET estado = 'Pagado' WHERE id = ?`, [deudaId]);
-                
-                db.run("COMMIT", (err) => {
-                    btnConfirmarCobroDeuda.disabled = false;
-                    btnConfirmarCobroDeuda.innerHTML = "✅ Cobrar y Registrar";
-                    if (err) {
-                        console.error("Error en cobro de deuda:", err);
-                        mostrarAlertaNeon("Error al cobrar la deuda en la base de datos.", "danger", "⚠️ Error Crítico");
-                    } else {
-                        modalCobrarDeuda.style.display = 'none';
-                        mostrarAlertaNeon(`¡Deuda cobrada con éxito!\nIngresó S/ ${monto.toFixed(2)} a tu caja por ${metodoPago}.`, 'success', '💰 Deuda Liquidada');
-                    }
+                db.run(`UPDATE fiados SET estado = 'Pagado' WHERE id = ?`, [deudaId], (err2) => {
+                    if (err2) return console.error("Error al actualizar fiado:", err2);
+                    
+                    mostrarAlertaNeon(`¡Deuda cobrada con éxito!\nIngresó S/ ${monto.toFixed(2)} a tu caja por ${metodoPago}.`, 'success', '💰 Deuda Liquidada');
+                    modalCobrarDeuda.style.display = 'none';
                 });
             });
-        }, 150);
     });
 
     cargarProductos();

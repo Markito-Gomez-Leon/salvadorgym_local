@@ -31,12 +31,12 @@
                         <th>ID</th>
                         <th>Nombre del Plan</th>
                         <th>Precio (S/)</th>
-                        <th>Duración (Meses)</th>
+                        <th>Duración</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-membresias">
-                    </tbody>
+                </tbody>
             </table>
         </div>
     </div>
@@ -55,10 +55,20 @@
                     <label>Precio (S/)</label>
                     <input type="number" id="precio-plan" step="0.01" class="form-control" required placeholder="Ej. 100.00">
                 </div>
+                
                 <div class="form-group">
-                    <label>Duración (Meses)</label>
-                    <input type="number" id="duracion-plan" class="form-control" required placeholder="Ej. 1, 3, 12">
+                    <label>Duración del Plan</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="duracion-plan" class="form-control" required placeholder="Ej. 1, 15, 30" style="flex: 1;">
+                        <select id="duracion-tipo" class="form-control" style="flex: 1;">
+                            <option value="Días">Días</option>
+                            <option value="Semanas">Semanas</option>
+                            <option value="Meses" selected>Meses</option>
+                            <option value="Años">Años</option>
+                        </select>
+                    </div>
                 </div>
+
                 <div class="modal-actions">
                     <button type="button" id="btn-cerrar-membresia" class="btn-cancel">Cancelar</button>
                     <button type="submit" class="action-btn" style="background-color: #00E5FF; color: black; padding: 10px 20px;">Guardar Plan</button>

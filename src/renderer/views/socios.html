@@ -19,7 +19,7 @@
             <button class="nav-btn" onclick="location.href='inventario.html'">📦 Inventario</button>
             <button class="nav-btn" onclick="location.href='finanzas.html'">💰 Finanzas Hoy</button>
             <button class="nav-btn" onclick="location.href='caja_global.html'">📊 Caja Global</button>
-            <button class="nav-btn" onclick="location.href='configuracion.html'">⚙️ Configuración</button>
+            <button class="nav-btn" onclick="location.href='configuracion.html'">⚙️️ Configuración</button>
             <button class="floating-wsp-btn" onclick="abrirGrupoWsp()">💬 Grupo WhatsApp</button>
         </div>
 
@@ -27,9 +27,8 @@
             <div class="header-actions">
                 <h2>Directorio de Socios</h2>
                 <div style="display: flex; gap: 10px;">
-                    <!-- NUEVOS BOTONES DE BACKUP -->
                     <input type="file" id="input-importar-socios" accept=".csv" style="display: none;">
-                    <button class="action-btn" onclick="document.getElementById('input-importar-socios').click()" style="background-color: #742484; color: white; padding: 12px 20px;">📥 Importar Reporte</button>
+                    <button class="action-btn" onclick="document.getElementById('input-importar-socios').click()" style="background-color: #742484; color: white; padding: 12px 20px;">📥 Importar Backup</button>
                     <button class="action-btn btn-wsp" onclick="exportarExcelSocios()" style="padding: 12px 20px;">📊 Exportar Reporte</button>
                     <button id="btn-nuevo-socio" class="action-btn" style="background-color: #00E5FF; color: black; padding: 12px 20px;">+ Nuevo Socio</button>
                 </div>
@@ -52,6 +51,7 @@
         </div>
     </div>
 
+    <!-- MODAL NUEVO/EDITAR SOCIO -->
     <div id="modal-socio" class="modal-overlay">
         <div class="modal-content">
             <h3 id="modal-titulo">Registrar Nuevo Socio</h3>
@@ -75,14 +75,14 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Método de Pago</label>
+                    <label>Método de Pago (1ra Mensualidad)</label>
                     <select id="socio-metodo" class="form-control" required>
                         <option value="Efectivo">💵 Efectivo</option>
                         <option value="Yape">📱 Yape</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Fecha de Vencimiento</label>
+                    <label>Fecha de Vencimiento (Autocalculado)</label>
                     <input type="date" id="socio-vencimiento" class="form-control" required>
                 </div>
                 <div class="modal-actions">
@@ -93,12 +93,12 @@
         </div>
     </div>
 
+    <!-- MEGA PERFIL (PURIFICADO: Solo Clínica y CRM) -->
     <div id="modal-perfil" class="modal-overlay">
         <div class="modal-content mega-modal">
             <h3 style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px;">
-                <span>📋 Perfil Clínico: <span id="perfil-nombre" style="color: white;"></span></span>
+                <span>📋 Perfil: <span id="perfil-nombre" style="color: white;"></span></span>
                 <div>
-                    <button id="btn-renovar-perfil" class="action-btn" style="background-color: #25D366; color: black; padding: 8px 15px; font-size: 14px;">⚡ Renovar Plan</button>
                     <button id="btn-cerrar-perfil" class="btn-cancel" style="padding: 8px 12px; font-size: 14px;">Cerrar ❌</button>
                 </div>
             </h3>
@@ -113,8 +113,7 @@
                 <div class="mega-modal-content">
                     <div class="tabs-header">
                         <button class="tab-btn active" onclick="cambiarPestana('tab-calculadora', this)">💪 Calculadora Fitness</button>
-                        <button class="tab-btn" onclick="cambiarPestana('tab-marketing', this)">📱 WhatsApp</button>
-                        <button class="tab-btn" onclick="cambiarPestana('tab-deudas', this)">💰 Fiados</button>
+                        <button class="tab-btn" onclick="cambiarPestana('tab-marketing', this)">📱 WhatsApp CRM</button>
                     </div>
 
                     <div id="tab-calculadora" class="tab-content active">
@@ -165,7 +164,6 @@
                         </div>
                     </div>
                                 
-                    <!-- NUEVA PESTAÑA: WHATSAPP CRM -->
                     <div id="tab-marketing" class="tab-content">
                         <h4 style="color: #25D366; margin-bottom: 15px;">📱 Centro de Marketing (WhatsApp)</h4>
                         <div class="form-group">
@@ -180,20 +178,26 @@
                         </div>
                         <button id="btn-enviar-wsp-crm" class="action-btn" style="background-color: #25D366; color: #000; font-weight: bold; padding: 12px 20px;">📲 Enviar por WhatsApp Web</button>
                     </div>
-                                
-                    <div id="tab-deudas" class="tab-content">
-                        <h4 style="color: #FF9800; margin-bottom: 15px;">Historial de Fiados Activos e Inactivos</h4>
-                        <table class="data-table" style="font-size: 13px;">
-                            <thead><tr><th>Fecha</th><th>Producto</th><th>Monto</th><th>Estado</th></tr></thead>
-                            <tbody id="tabla-perfil-deudas"></tbody>
-                        </table>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="modal-renovar" class="modal-overlay" style="z-index: 2000;">
+    <!-- NUEVO MODAL: ENRUTADOR DE MEMBRESÍA -->
+    <div id="modal-opciones-membresia" class="modal-overlay" style="z-index: 2000;">
+        <div class="modal-content" style="width: 350px; text-align: center;">
+            <h3 style="color: #00E5FF; border-bottom: 1px solid #333; padding-bottom: 10px;">💳 Gestión de Membresía</h3>
+            <p id="opciones-socio-nombre" style="margin-bottom: 15px; font-weight: bold;"></p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button id="btn-opcion-renovar" class="action-btn" style="background-color: #25D366; color: black; padding: 15px; font-size: 16px;">⚡ Renovar Plan (Acumulativo)</button>
+                <button id="btn-opcion-upgrade" class="action-btn" style="background-color: #FF9800; color: black; padding: 15px; font-size: 16px;">⬆️ Pago adicional</button>
+                <button type="button" class="btn-cancel" onclick="document.getElementById('modal-opciones-membresia').style.display='none'" style="margin-top: 10px;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RENOVAR -->
+    <div id="modal-renovar" class="modal-overlay" style="z-index: 2100;">
         <div class="modal-content" style="width: 350px;">
             <h3>⚡ Renovación Acumulativa</h3>
             <form id="form-renovar">
@@ -222,6 +226,52 @@
                     <button type="submit" class="action-btn" style="background-color: #25D366; color: black; padding: 10px 15px;">Cobrar Renovación</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL PAGO ADICIONAL (DIFERENCIA) -->
+    <div id="modal-upgrade" class="modal-overlay" style="z-index: 2100;">
+        <div class="modal-content" style="width: 350px;">
+            <h3 style="color: #FF9800; border-bottom: 1px solid #333; padding-bottom: 10px;">⬆️ Cobrar Pago Adicional</h3>
+            <form id="form-upgrade">
+                <input type="hidden" id="upgrade-socio-id">
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Socio</label>
+                    <input type="text" id="upgrade-socio-nombre" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Monto a Cobrar (S/)</label>
+                    <input type="number" step="0.01" id="upgrade-monto" class="form-control" required placeholder="Ej. 50.00">
+                </div>
+                <div class="form-group">
+                    <label>Método de Pago</label>
+                    <select id="upgrade-metodo" class="form-control" required>
+                        <option value="Efectivo">💵 Efectivo</option>
+                        <option value="Yape">📱 Yape</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label style="color: #00E5FF; font-size: 11px; margin-top: 5px; display: block;">Nota: Esta acción registrará el ingreso exacto en tu caja de hoy. Usa el botón "Editar" principal si necesitas cambiar manualmente el nombre de su plan.</label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="document.getElementById('modal-upgrade').style.display='none'">Cancelar</button>
+                    <button type="submit" class="action-btn" style="background-color: #FF9800; color: black; padding: 10px 15px; font-weight: bold;">Cobrar y Registrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NUEVO MODAL: PAGO DE DEUDAS -->
+    <div id="modal-deudas-socio" class="modal-overlay" style="z-index: 2000;">
+        <div class="modal-content" style="width: 600px;">
+            <h3 style="color: #FF9800; border-bottom: 1px solid #333; padding-bottom: 10px;">💰 Deudas Pendientes: <span id="deudas-socio-nombre" style="color: white;"></span></h3>
+            <table class="data-table" style="font-size: 13px; margin-top: 15px;">
+                <thead><tr><th>Fecha</th><th>Producto</th><th>Monto</th><th>Estado</th></tr></thead>
+                <tbody id="tabla-modal-deudas"></tbody>
+            </table>
+            <div class="modal-actions" style="margin-top: 15px;">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('modal-deudas-socio').style.display='none'">Cerrar</button>
+            </div>
         </div>
     </div>
 

@@ -19,13 +19,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             rows.forEach(plan => {
                 const tr = document.createElement('tr');
+                const tipoSeguro = plan.duracion_tipo || 'Meses'; // Por si hay planes antiguos sin tipo
+
                 tr.innerHTML = `
                     <td>${plan.id}</td>
                     <td><strong>${plan.nombre}</strong></td>
                     <td>S/ ${plan.precio.toFixed(2)}</td>
-                    <td>${plan.duracion_meses} ${plan.duracion_meses === 1 ? 'Mes' : 'Meses'}</td>
+                    <td>${plan.duracion_meses} ${tipoSeguro}</td>
                     <td>
-                        <button class="action-btn btn-edit" onclick="editarMembresia(${plan.id}, '${plan.nombre.replace(/'/g, "\\'")}', ${plan.precio}, ${plan.duracion_meses})">Editar</button>
+                        <button class="action-btn btn-edit" onclick="editarMembresia(${plan.id}, '${plan.nombre.replace(/'/g, "\\'")}', ${plan.precio}, ${plan.duracion_meses}, '${tipoSeguro}')">Editar</button>
                         <button class="action-btn btn-delete" onclick="deshabilitarMembresia(${plan.id})">Eliminar</button>
                     </td>
                 `;
@@ -36,8 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. Abrir Modal para crear "Nueva Membresía"
     btnNueva.addEventListener('click', () => {
-        document.getElementById('membresia-id').value = ''; // Limpiamos ID oculto
-        formMembresia.reset(); // Limpiamos casillas
+        document.getElementById('membresia-id').value = ''; 
+        formMembresia.reset(); 
+        document.getElementById('duracion-tipo').value = 'Meses'; // Default
         modalTitulo.textContent = 'Nueva Membresía';
         modal.style.display = 'flex';
     });
@@ -54,20 +57,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const nombre = document.getElementById('nombre-plan').value;
         const precio = parseFloat(document.getElementById('precio-plan').value);
         const duracion = parseInt(document.getElementById('duracion-plan').value);
+        const tipo = document.getElementById('duracion-tipo').value;
 
         if (id) {
-            // Si hay un ID oculto, estamos EDITANDO
-            db.run(`UPDATE membresias SET nombre = ?, precio = ?, duracion_meses = ? WHERE id = ?`, 
-            [nombre, precio, duracion, id], (err) => {
+            // EDITANDO
+            db.run(`UPDATE membresias SET nombre = ?, precio = ?, duracion_meses = ?, duracion_tipo = ? WHERE id = ?`, 
+            [nombre, precio, duracion, tipo, id], (err) => {
                 if (err) console.error(err);
                 modal.style.display = 'none';
                 cargarMembresias();
                 mostrarAlertaNeon("Membresía actualizada con éxito.", "success", "✅ Plan Editado");
             });
         } else {
-            // Si no hay ID, estamos CREANDO una nueva (siempre con activo = 1)
-            db.run(`INSERT INTO membresias (nombre, precio, duracion_meses, activo) VALUES (?, ?, ?, 1)`, 
-            [nombre, precio, duracion], (err) => {
+            // CREANDO (activo = 1)
+            db.run(`INSERT INTO membresias (nombre, precio, duracion_meses, duracion_tipo, activo) VALUES (?, ?, ?, ?, 1)`, 
+            [nombre, precio, duracion, tipo], (err) => {
                 if (err) console.error(err);
                 modal.style.display = 'none';
                 cargarMembresias();
@@ -77,11 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 5. Preparar el Modal para Edición
-    window.editarMembresia = (id, nombre, precio, duracion) => {
-        document.getElementById('membresia-id').value = id; // Guardamos el ID de la que vamos a editar
+    window.editarMembresia = (id, nombre, precio, duracion, tipo) => {
+        document.getElementById('membresia-id').value = id; 
         document.getElementById('nombre-plan').value = nombre;
         document.getElementById('precio-plan').value = precio;
         document.getElementById('duracion-plan').value = duracion;
+        document.getElementById('duracion-tipo').value = tipo;
         
         modalTitulo.textContent = 'Editar Membresía';
         modal.style.display = 'flex';

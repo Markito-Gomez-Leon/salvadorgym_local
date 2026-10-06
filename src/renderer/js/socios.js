@@ -26,13 +26,18 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('socio-vencimiento').disabled = false;
 
         modalSocio.style.display = 'flex';
-        calcularVencimientoLocal(selectPlan.value, new Date(), inputVencimiento);
+        
+        let hoy = new Date();
+        hoy.setHours(0,0,0,0);
+        calcularVencimientoLocal(selectPlan.value, hoy, inputVencimiento);
     });
  
     btnCerrarModal.addEventListener('click', () => modalSocio.style.display = 'none');
  
     selectPlan.addEventListener('change', (e) => {
-        calcularVencimientoLocal(e.target.value, new Date(), inputVencimiento);
+        let hoy = new Date();
+        hoy.setHours(0,0,0,0);
+        calcularVencimientoLocal(e.target.value, hoy, inputVencimiento);
     });
  
     formSocio.addEventListener('submit', (e) => {
@@ -52,8 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const fechaHoraFija = obtenerFechaHoraPeru();
  
         if (id) {
-            db.run(`UPDATE socios SET nombre = ?, telefono = ?, fecha_nacimiento = ?, fecha_vencimiento = ? WHERE id = ?`,
-                [nombre, telefono, nacimiento, vencimiento, id], (err) => {
+            db.run(`UPDATE socios SET nombre = ?, telefono = ?, fecha_nacimiento = ?, fecha_vencimiento = ?, plan = ? WHERE id = ?`,
+                [nombre, telefono, nacimiento, vencimiento, planNombre, id], (err) => {
                     if (err) console.error(err);
                     modalSocio.style.display = 'none';
                     cargarSociosYCumpleanos();
@@ -98,10 +103,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(errVenta) console.error(errVenta);
                 });
             document.getElementById('modal-renovar').style.display = 'none';
-            document.getElementById('modal-perfil').style.display = 'none';
             cargarSociosYCumpleanos();
             mostrarAlertaNeon(`Renovación cobrada con éxito (${metodoPagoRenovacion}).`, "success", "⚡ Plan Renovado");
         });
+    });
+
+    document.getElementById('form-upgrade').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nombre = document.getElementById('upgrade-socio-nombre').value;
+        const montoDiferencia = parseFloat(document.getElementById('upgrade-monto').value);
+        const metodo = document.getElementById('upgrade-metodo').value;
+        const fechaHoraFija = obtenerFechaHoraPeru();
+        
+        const conceptoVenta = `Pago adicional de Plan: ${nombre}`;
+
+        db.run(`INSERT INTO ventas (producto_nombre, precio_total, metodo_pago, fecha) VALUES (?, ?, ?, ?)`,
+            [conceptoVenta, montoDiferencia, metodo, fechaHoraFija], (err) => {
+                if (err) return console.error(err);
+                
+                document.getElementById('modal-upgrade').style.display = 'none';
+                mostrarAlertaNeon(`El pago de S/ ${montoDiferencia.toFixed(2)} ingresó a la caja de hoy en ${metodo}.`, "success", "⬆️ Pago Registrado");
+            });
     });
  
     document.getElementById('renovar-plan').addEventListener('change', (e) => {
@@ -110,8 +132,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if(row) {
                 const hoy = new Date();
                 hoy.setHours(0,0,0,0);
-                let vActual = new Date(row.fecha_vencimiento);
-                let fechaBase = (vActual > hoy) ? vActual : new Date();
+                
+                const partes = row.fecha_vencimiento.split('-');
+                let vActual = new Date(partes[0], partes[1] - 1, partes[2]);
+                vActual.setHours(0,0,0,0);
+                
+                let fechaBase = (vActual > hoy) ? vActual : hoy;
                 calcularVencimientoLocal(e.target.value, fechaBase, document.getElementById('renovar-vencimiento'));
             }
         });
@@ -143,7 +169,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // EVENTO DE IMPORTACIÓN (BACKUP DE SOCIOS)
     document.getElementById('input-importar-socios').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -196,8 +221,20 @@ function cargarSociosYCumpleanos() {
     let hayCumpleaneros = false;
     let nombresCumpleaneros = [];
  
-    db.all(`SELECT * FROM socios ORDER BY id DESC`, [], (err, rows) => {
+    const query = `
+        SELECT s.*, 
+               (SELECT SUM(monto) FROM fiados WHERE socio_id = s.id AND estado = 'Pendiente') AS deuda_total 
+        FROM socios s 
+        WHERE s.activo = 1 OR s.activo IS NULL 
+        ORDER BY s.id DESC
+    `;
+
+    db.all(query, [], (err, rows) => {
         if (err) return console.error(err);
+        
+        // 🎨 EL MAQUILLAJE VISUAL: Creamos un contador basado en la cantidad total de socios vivos
+        let contadorVisual = rows.length;
+
         rows.forEach(socio => {
             if (socio.fecha_nacimiento) {
                 const parts = socio.fecha_nacimiento.split('-');
@@ -212,22 +249,40 @@ function cargarSociosYCumpleanos() {
             }
  
             const tr = document.createElement('tr');
-            const vencimiento = new Date(socio.fecha_vencimiento);
+            let vencimiento;
+            if(socio.fecha_vencimiento) {
+                const p = socio.fecha_vencimiento.split('-');
+                vencimiento = new Date(p[0], p[1]-1, p[2], 23, 59, 59);
+            } else {
+                vencimiento = new Date(0);
+            }
             const vencido = vencimiento < hoy;
             const colorVencimiento = vencido ? 'color: #ff4444; font-weight: bold;' : 'color: #25D366;';
  
+            let btnDeuda = '';
+            if (socio.deuda_total && socio.deuda_total > 0) {
+                btnDeuda = `<button class="action-btn" style="background: #2A2A2A; border: 1px solid #FF9800; color: #FF9800;" onclick="abrirDeudasSocio(${socio.id}, '${socio.nombre.replace(/'/g, "\\'")}')">💰 Deuda (S/ ${socio.deuda_total.toFixed(2)})</button>`;
+            }
+
+            // Inyectamos el contadorVisual en el <td> en lugar de socio.id
             tr.innerHTML = `
-                <td>${socio.id}</td>
+                <td>${contadorVisual}</td>
                 <td><strong>${socio.nombre}</strong></td>
                 <td>${socio.telefono}</td>
                 <td>${socio.plan}</td>
                 <td style="${colorVencimiento}">${socio.fecha_vencimiento} ${vencido ? '(Vencido)' : ''}</td>
                 <td>
-                    <button class="action-btn" style="background: #2A2A2A; border: 1px solid #00E5FF; color: #00E5FF;" onclick="abrirMegaPerfil(${socio.id}, '${socio.nombre}', '${socio.telefono}', '${socio.fecha_vencimiento}')">📋 Mega Perfil</button>
-                    <button class="action-btn btn-edit" onclick="editarSocio(${socio.id})">Editar</button>
+                    <button class="action-btn btn-edit" onclick="editarSocio(${socio.id})">✏️ Editar datos</button>
+                    <button class="action-btn" style="background: #2A2A2A; border: 1px solid #25D366; color: #25D366;" onclick="abrirOpcionesMembresia(${socio.id}, '${socio.nombre.replace(/'/g, "\\'")}')">💳 Membresía</button>
+                    ${btnDeuda}
+                    <button class="action-btn" style="background: #2A2A2A; border: 1px solid #00E5FF; color: #00E5FF;" onclick="abrirMegaPerfil(${socio.id}, '${socio.nombre.replace(/'/g, "\\'")}', '${socio.telefono}', '${socio.fecha_vencimiento}')">📋 Perfil</button>
+                    <button class="action-btn" style="background: #2A2A2A; border: 1px solid #ff4444; color: #ff4444;" onclick="eliminarSocio(${socio.id}, '${socio.nombre.replace(/'/g, "\\'")}')">🗑️</button>
                 </td>
             `;
             tbody.appendChild(tr);
+            
+            // Restamos 1 para que el siguiente socio tenga el número anterior
+            contadorVisual--;
         });
  
         const banner = document.getElementById('banner-cumpleanos');
@@ -239,7 +294,48 @@ function cargarSociosYCumpleanos() {
         }
     });
 }
+
+window.eliminarSocio = (id, nombre) => {
+    mostrarConfirmacionNeon(
+        `¿Estás seguro de ocultar a ${nombre} del directorio?\n\nSus pagos pasados se mantendrán intactos en la Caja Global para no alterar tus reportes financieros.`,
+        () => {
+            db.run(`UPDATE socios SET activo = 0 WHERE id = ?`, [id], (err) => {
+                if (err) return console.error(err);
+                cargarSociosYCumpleanos();
+                mostrarAlertaNeon(`El socio ${nombre} ha sido eliminado de tu vista.`, "info", "✅ Borrado Exitoso");
+            });
+        },
+        "⚠️ Eliminar Socio"
+    );
+};
  
+window.abrirOpcionesMembresia = (id, nombre) => {
+    document.getElementById('opciones-socio-nombre').textContent = nombre;
+    document.getElementById('modal-opciones-membresia').style.display = 'flex';
+
+    document.getElementById('btn-opcion-renovar').onclick = () => {
+        document.getElementById('modal-opciones-membresia').style.display = 'none';
+        document.getElementById('renovar-socio-id').value = id;
+        document.getElementById('renovar-socio-nombre').value = nombre;
+        document.getElementById('modal-renovar').style.display = 'flex';
+        document.getElementById('renovar-plan').dispatchEvent(new Event('change'));
+    };
+
+    document.getElementById('btn-opcion-upgrade').onclick = () => {
+        document.getElementById('modal-opciones-membresia').style.display = 'none';
+        document.getElementById('upgrade-socio-id').value = id;
+        document.getElementById('upgrade-socio-nombre').value = nombre;
+        document.getElementById('upgrade-monto').value = ''; 
+        document.getElementById('modal-upgrade').style.display = 'flex';
+    };
+};
+
+window.abrirDeudasSocio = (id, nombre) => {
+    document.getElementById('deudas-socio-nombre').textContent = nombre;
+    document.getElementById('modal-deudas-socio').style.display = 'flex';
+    cargarDeudasModal(id);
+};
+
 window.abrirMegaPerfil = (id, nombre, telefono, fechaVencimiento) => {
     document.getElementById('perfil-id').value = id;
     document.getElementById('perfil-nombre').textContent = nombre;
@@ -253,15 +349,7 @@ window.abrirMegaPerfil = (id, nombre, telefono, fechaVencimiento) => {
     window.telefonoSocioActual = telefono;
     window.nombreSocioActual = nombre;
     
-    document.getElementById('btn-renovar-perfil').onclick = () => {
-        document.getElementById('renovar-socio-id').value = id;
-        document.getElementById('renovar-socio-nombre').value = nombre;
-        document.getElementById('modal-renovar').style.display = 'flex';
-        document.getElementById('renovar-plan').dispatchEvent(new Event('change'));
-    };
- 
     cargarHistorialProgreso(id);
-    cargarDeudasPerfil(id);
 };
  
 function cargarHistorialProgreso(socioId) {
@@ -284,18 +372,14 @@ function cargarHistorialProgreso(socioId) {
     });
 }
 
-// ----------------------------------------------------
-// MAGIA: COBROS PARCIALES DE DEUDAS (MODIFICADO)
-// ----------------------------------------------------
-function cargarDeudasPerfil(socioId) {
-    const tbody = document.getElementById('tabla-perfil-deudas');
+function cargarDeudasModal(socioId) {
+    const tbody = document.getElementById('tabla-modal-deudas');
     tbody.innerHTML = '';
     db.all(`SELECT * FROM fiados WHERE socio_id = ? ORDER BY id DESC`, [socioId], (err, rows) => {
         if(err) return;
         rows.forEach(r => {
             let colorEstado = r.estado === 'Pagado' ? '#25D366' : '#FF0055';
             
-            // Inyectamos el selector de Yape/Efectivo y el botón "Pagar" directamente en la columna de Estado
             let htmlAccion = '';
             if (r.estado === 'Pendiente') {
                 htmlAccion = `
@@ -324,7 +408,6 @@ function cargarDeudasPerfil(socioId) {
     });
 }
 
-// NUEVA FUNCIÓN: Cobro Individual con Alerta Neón
 window.cobrarDeudaIndividual = (idFiado, monto, descripcion, socioId) => {
     const metodoElegido = document.getElementById(`metodo-fiado-${idFiado}`).value;
 
@@ -334,15 +417,14 @@ window.cobrarDeudaIndividual = (idFiado, monto, descripcion, socioId) => {
             const fechaFija = obtenerFechaHoraPeru();
             const concepto = `Pago de Deuda: ${descripcion}`;
 
-            // Insertamos el dinero real a las Finanzas
             db.run(`INSERT INTO ventas (producto_nombre, precio_total, metodo_pago, fecha) VALUES (?, ?, ?, ?)`, 
                 [concepto, monto, metodoElegido, fechaFija], (err) => {
                     if (err) return console.error(err);
                     
-                    // Actualizamos la deuda a 'Pagado'
                     db.run(`UPDATE fiados SET estado = 'Pagado' WHERE id = ?`, [idFiado], () => {
                         mostrarAlertaNeon(`El pago de S/ ${monto.toFixed(2)} ingresó a tu caja de hoy.`, "success", "💰 Deuda Liquidada");
-                        cargarDeudasPerfil(socioId); // Recarga la tabla para que cambie a ✅ Cancelado
+                        cargarDeudasModal(socioId); 
+                        cargarSociosYCumpleanos(); 
                     });
                 });
         },
@@ -449,22 +531,41 @@ function calcularVencimientoLocal(planId, fechaBaseDate, inputTarget) {
     const planElegido = planesMembresia.find(p => p.id == planId);
     if(planElegido) {
         let d = new Date(fechaBaseDate);
-        d.setMonth(d.getMonth() + planElegido.duracion_meses);
-        d.setHours(d.getHours() - 5); 
-        inputTarget.value = d.toISOString().split('T')[0];
+        
+        const cantidad = planElegido.duracion_meses; 
+        const tipo = planElegido.duracion_tipo || 'Meses'; 
+
+        if (tipo === 'Días') {
+            d.setDate(d.getDate() + cantidad);
+        } else if (tipo === 'Semanas') {
+            d.setDate(d.getDate() + (cantidad * 7));
+        } else if (tipo === 'Años') {
+            d.setFullYear(d.getFullYear() + cantidad);
+        } else {
+            d.setMonth(d.getMonth() + cantidad);
+        }
+
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        
+        inputTarget.value = `${yyyy}-${mm}-${dd}`;
     }
 }
  
 function obtenerFechaHoraPeru() {
-    let d = new Date();
-    d.setHours(d.getHours() - 5); 
-    return d.toISOString().replace('T', ' ').substring(0, 19);
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    const ss = String(d.getSeconds()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
 }
 
 function obtenerFechaLocal() {
-    let d = new Date();
-    d.setHours(d.getHours() - 5);
-    return d.toISOString().replace('T', ' ').substring(0, 19);
+    return obtenerFechaHoraPeru();
 }
  
 window.editarSocio = (id) => {
@@ -486,7 +587,7 @@ window.editarSocio = (id) => {
             
             document.getElementById('socio-vencimiento').value = socio.fecha_vencimiento;
             
-            document.getElementById('socio-plan').disabled = true;
+            document.getElementById('socio-plan').disabled = false;
             document.getElementById('socio-metodo').disabled = true;
             document.getElementById('socio-vencimiento').disabled = false;
 
@@ -497,7 +598,7 @@ window.editarSocio = (id) => {
 };
 
 window.exportarExcelSocios = () => {
-    db.all(`SELECT * FROM socios ORDER BY id ASC`, [], (err, rows) => {
+    db.all(`SELECT * FROM socios WHERE activo = 1 OR activo IS NULL ORDER BY id ASC`, [], (err, rows) => {
         if (err) return console.error(err);
         if (rows.length === 0) {
             mostrarAlertaNeon("No hay socios registrados para exportar.", "danger", "⚠️ Directorio Vacío");

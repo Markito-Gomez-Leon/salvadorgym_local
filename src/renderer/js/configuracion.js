@@ -1,8 +1,25 @@
 // Archivo: src/renderer/js/configuracion.js
 const db = require('../../main/db.js');
+const os = require('os'); // NUEVA HERRAMIENTA DE RED PARA LEER LA IP
 
 document.addEventListener('DOMContentLoaded', () => {
     
+    // ==========================================
+    // ESCÁNER DE RED PARA LA APP MÓVIL
+    // ==========================================
+    const ipDisplay = document.getElementById('ip-display');
+    const interfaces = os.networkInterfaces();
+    let ipEncontrada = 'Sin Conexión Wi-Fi';
+    
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            if (iface.family === 'IPv4' && !iface.internal) {
+                ipEncontrada = iface.address;
+            }
+        }
+    }
+    if (ipDisplay) ipDisplay.textContent = ipEncontrada;
+
     // ==========================================
     // 1. LÓGICA DE CREDENCIALES (ACCESOS)
     // ==========================================

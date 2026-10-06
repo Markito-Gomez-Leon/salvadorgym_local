@@ -24,23 +24,37 @@
             
             <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
                 
-                <!-- Panel: Credenciales -->
-                <div style="background: rgba(26, 26, 26, 0.95); padding: 20px; border-radius: 8px; height: fit-content; border: 1px solid #333;">
-                    <h3 style="color: #ff4444; margin-top: 0;">🔐 Cambio de Contraseña</h3>
-                    <form id="form-credenciales">
-                        <div class="form-group">
-                            <label>Usuario</label>
-                            <input type="text" id="config-user" class="form-control" required>
+                <!-- COLUMNA IZQUIERDA: IP y Credenciales -->
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    
+                    <!-- NUEVO PANEL: CONEXIÓN MÓVIL -->
+                    <div style="background: rgba(26, 26, 26, 0.95); padding: 20px; border-radius: 8px; border: 1px solid #00E5FF;">
+                        <h3 style="color: #00E5FF; margin-top: 0;">📱 Conexión App Móvil</h3>
+                        <p style="color: #ccc; font-size: 13px; margin-bottom: 15px;">Ingresa esta IP en tu celular para sincronizar la Caja Rápida por Wi-Fi:</p>
+                        <div style="background: #121212; padding: 15px; border-radius: 6px; text-align: center; border: 1px dashed #00E5FF;">
+                            <h2 id="ip-display" style="color: #FFF; margin: 0; letter-spacing: 1px;">Cargando...</h2>
                         </div>
-                        <div class="form-group">
-                            <label>Nueva Contraseña</label>
-                            <input type="text" id="config-pass" class="form-control" required>
-                        </div>
-                        <button type="submit" class="pay-btn cash-btn" style="margin: 0; width: 100%;">Actualizar Usuario y Contraseña</button>
-                    </form>
+                    </div>
+
+                    <!-- Panel: Credenciales -->
+                    <div style="background: rgba(26, 26, 26, 0.95); padding: 20px; border-radius: 8px; height: fit-content; border: 1px solid #333;">
+                        <h3 style="color: #ff4444; margin-top: 0;">🔐 Cambio de Contraseña</h3>
+                        <form id="form-credenciales">
+                            <div class="form-group">
+                                <label>Usuario</label>
+                                <input type="text" id="config-user" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Nueva Contraseña</label>
+                                <input type="text" id="config-pass" class="form-control" required>
+                            </div>
+                            <button type="submit" class="pay-btn cash-btn" style="margin: 0; width: 100%;">Actualizar Accesos</button>
+                        </form>
+                    </div>
+
                 </div>
 
-                <!-- Panel: Gestor de Plantillas -->
+                <!-- COLUMNA DERECHA: Panel: Gestor de Plantillas -->
                 <div style="background: rgba(26, 26, 26, 0.95); padding: 20px; border-radius: 8px; border: 1px solid #333;">
                     <h3 style="color: #25D366; margin-top: 0;">📲 Gestor de Plantillas</h3>
                     <p style="color: #888; font-size: 13px; margin-bottom: 15px;">Crea mensajes predeterminados para enviarlos rápido desde el perfil del socio. Usa <b>[NOMBRE]</b> para que el sistema lo salude automáticamente.</p>
